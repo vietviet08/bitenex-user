@@ -1,128 +1,148 @@
-import { useEffect } from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Redirect, Stack, useSegments } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import * as SplashScreen from 'expo-splash-screen';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import 'react-native-reanimated';
+import {
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
+} from "@react-navigation/native";
+import { Redirect, Stack, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useMemo, useRef } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "react-native-reanimated";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/hooks/useAuth';
-import { socketClient } from '@/services';
-import { colors } from '@/theme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/hooks/useAuth";
+import { socketClient } from "@/services";
+import { getHasRehydrated, useAuthStore } from "@/store/zustand/auth.store";
+import { colors } from "@/theme";
 
-// Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
-// Navigation settings
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+    initialRouteName: "(tabs)",
 };
 
 function RootLayoutNav() {
-  const { isAuthenticated, isInitialized, isLoading, bootstrap } = useAuth();
-  const segments = useSegments();
-  const colorScheme = useColorScheme();
-
-  // Bootstrap auth on app start
-  useEffect(() => {
-    bootstrap();
-  }, [bootstrap]);
-
-  // Connect/disconnect socket based on auth state
-  useEffect(() => {
-    if (isAuthenticated) {
-      socketClient.connect();
-    } else {
-      socketClient.disconnect();
-    }
-  }, [isAuthenticated]);
-
-  // Hide splash screen when initialized
-  useEffect(() => {
-    if (isInitialized) {
-      SplashScreen.hideAsync();
-    }
-  }, [isInitialized]);
-
-  // Show loading screen while bootstrapping
-  if (!isInitialized || isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-      </View>
+    const { isAuthenticated, isInitialized, isLoading } = useAuth();
+    const segments = useSegments();
+    const colorScheme = useColorScheme();
+    const hasBootstrapped = useRef(false);
+    const rehydrationCheckRef = useRef<ReturnType<typeof setTimeout> | null>(
+        null
     );
-  }
 
-  // Route guard: check if user is in auth group
-  const inAuthGroup = segments[0] === '(auth)';
+    useEffect(() => {
+        if (!hasBootstrapped.current && !isInitialized) {
+            const checkAndBootstrap = () => {
+                if (getHasRehydrated() && !hasBootstrapped.current) {
+                    hasBootstrapped.current = true;
+                    useAuthStore.getState().bootstrap();
+                } else if (!hasBootstrapped.current) {
+                    rehydrationCheckRef.current = setTimeout(
+                        checkAndBootstrap,
+                        10
+                    );
+                }
+            };
 
-  // Redirect logic
-  if (!isAuthenticated && !inAuthGroup) {
-    // User is not signed in and not on auth screen -> redirect to login
-    return <Redirect href="/(auth)/login" />;
-  }
+            queueMicrotask(checkAndBootstrap);
+        }
 
-  if (isAuthenticated && inAuthGroup) {
-    // User is signed in but on auth screen -> redirect to home
-    return <Redirect href="/(tabs)" />;
-  }
+        return () => {
+            if (rehydrationCheckRef.current) {
+                clearTimeout(rehydrationCheckRef.current);
+            }
+        };
+    }, [isInitialized]);
 
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* Main tabs */}
-        <Stack.Screen name="(tabs)" />
+    useEffect(() => {
+        if (isAuthenticated) {
+            socketClient.connect();
+        } else {
+            socketClient.disconnect();
+        }
+    }, [isAuthenticated]);
 
-        {/* Auth screens (group) */}
-        <Stack.Screen
-          name="(auth)"
-          options={{
-            headerShown: false,
-            animation: 'slide_from_bottom',
-          }}
-        />
+    useEffect(() => {
+        if (isInitialized) {
+            SplashScreen.hideAsync();
+        }
+    }, [isInitialized]);
 
-        {/* Modal screens */}
-        <Stack.Screen
-          name="(modal)"
-          options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-          }}
-        />
+    const theme = useMemo(
+        () => (colorScheme === "dark" ? DarkTheme : DefaultTheme),
+        [colorScheme]
+    );
 
-        {/* Legacy modal - remove after migration */}
-        <Stack.Screen
-          name="modal"
-          options={{
-            presentation: 'modal',
-            title: 'Modal',
-          }}
-        />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+    if (!isInitialized || isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary[500]} />
+            </View>
+        );
+    }
+
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (!isAuthenticated && !inAuthGroup) {
+        return <Redirect href="/(auth)/login" />;
+    }
+
+    if (isAuthenticated && inAuthGroup) {
+        return <Redirect href="/(tabs)" />;
+    }
+
+    return (
+        <ThemeProvider value={theme}>
+            <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+
+                <Stack.Screen
+                    name="(auth)"
+                    options={{
+                        headerShown: false,
+                        animation: "slide_from_bottom",
+                    }}
+                />
+
+                <Stack.Screen
+                    name="(modal)"
+                    options={{
+                        presentation: "modal",
+                        animation: "slide_from_bottom",
+                    }}
+                />
+
+                <Stack.Screen
+                    name="modal"
+                    options={{
+                        presentation: "modal",
+                        title: "Modal",
+                    }}
+                />
+            </Stack>
+            <StatusBar style="auto" />
+        </ThemeProvider>
+    );
 }
 
 export default function RootLayout() {
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <RootLayoutNav />
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
-  );
+    return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaProvider>
+                <RootLayoutNav />
+            </SafeAreaProvider>
+        </GestureHandlerRootView>
+    );
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background.primary,
-  },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: colors.background.primary,
+    },
 });

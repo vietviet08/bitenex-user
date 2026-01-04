@@ -1,33 +1,48 @@
 import {
-  useAuthStore,
-  useUser,
-  useIsAuthenticated,
-  useAuthLoading,
-  useIsInitialized,
-} from '@/store/zustand/auth.store';
+    useAuthLoading,
+    useAuthStore,
+    useIsAuthenticated,
+    useIsInitialized,
+    useUser,
+} from "@/store/zustand/auth.store";
+import { useMemo } from "react";
+
+type AuthState = ReturnType<typeof useAuthStore.getState>;
+const selectBootstrap = (state: AuthState) => state.bootstrap;
+const selectLogin = (state: AuthState) => state.login;
+const selectLogout = (state: AuthState) => state.logout;
 
 export function useAuth() {
-  const user = useUser();
-  const isAuthenticated = useIsAuthenticated();
-  const isLoading = useAuthLoading();
-  const isInitialized = useIsInitialized();
+    const user = useUser();
+    const isAuthenticated = useIsAuthenticated();
+    const isLoading = useAuthLoading();
+    const isInitialized = useIsInitialized();
 
-  const bootstrap = useAuthStore((state) => state.bootstrap);
-  const login = useAuthStore((state) => state.login);
-  const logout = useAuthStore((state) => state.logout);
+    const bootstrap = useAuthStore(selectBootstrap);
+    const login = useAuthStore(selectLogin);
+    const logout = useAuthStore(selectLogout);
 
-  return {
-    // State
-    user,
-    isAuthenticated,
-    isLoading,
-    isInitialized,
+    return useMemo(
+        () => ({
+            user,
+            isAuthenticated,
+            isLoading,
+            isInitialized,
 
-    // Actions
-    bootstrap,
-    login,
-    logout,
-  };
+            bootstrap,
+            login,
+            logout,
+        }),
+        [
+            user,
+            isAuthenticated,
+            isLoading,
+            isInitialized,
+            bootstrap,
+            login,
+            logout,
+        ]
+    );
 }
 
 export default useAuth;
