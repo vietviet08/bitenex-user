@@ -1,98 +1,252 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+/**
+ * Home Screen
+ * Main entry point showing featured restaurants, categories, and promotions
+ */
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { colors, spacing, textStyles, borderRadius } from '@/theme';
+import { useUser, useCartItemCount } from '@/store';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const user = useUser();
+  const cartItemCount = useCartItemCount();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const handleOpenCart = () => {
+    router.push('/(modal)/cart');
+  };
+
+  const handleSearch = () => {
+    router.push('/(tabs)/explore');
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.locationContainer}>
+          <IconSymbol name="location.fill" size={20} color={colors.primary[500]} />
+          <View style={styles.locationText}>
+            <Text style={styles.deliveryLabel}>Deliver to</Text>
+            <TouchableOpacity style={styles.addressButton}>
+              <Text style={styles.addressText} numberOfLines={1}>
+                {user ? 'Select address' : 'Set your location'}
+              </Text>
+              <IconSymbol name="chevron.down" size={16} color={colors.text.secondary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Cart Button */}
+        <TouchableOpacity style={styles.cartButton} onPress={handleOpenCart}>
+          <IconSymbol name="cart.fill" size={24} color={colors.text.primary} />
+          {cartItemCount > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* Search Bar */}
+      <TouchableOpacity style={styles.searchBar} onPress={handleSearch}>
+        <IconSymbol name="magnifyingglass" size={20} color={colors.text.tertiary} />
+        <Text style={styles.searchPlaceholder}>Search restaurants or dishes...</Text>
+      </TouchableOpacity>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Promotions Banner - Placeholder */}
+        <View style={styles.promoBanner}>
+          <Text style={styles.promoTitle}>🔥 Free Delivery</Text>
+          <Text style={styles.promoSubtitle}>On your first 3 orders</Text>
+        </View>
+
+        {/* Categories - Placeholder */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {['🍔 Burgers', '🍕 Pizza', '🍜 Noodles', '🍣 Sushi', '🥗 Salads', '🧁 Desserts'].map(
+              (category, index) => (
+                <TouchableOpacity key={index} style={styles.categoryCard}>
+                  <Text style={styles.categoryText}>{category}</Text>
+                </TouchableOpacity>
+              )
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Featured Restaurants - Placeholder */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Restaurants</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>See all</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Restaurant cards will go here */}
+          <View style={styles.restaurantPlaceholder}>
+            <Text style={styles.placeholderText}>Restaurant cards coming soon</Text>
+          </View>
+        </View>
+
+        {/* Near You - Placeholder */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Near You</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>See all</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.restaurantPlaceholder}>
+            <Text style={styles.placeholderText}>Nearby restaurants coming soon</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  locationText: {
+    marginLeft: spacing.sm,
+    flex: 1,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  deliveryLabel: {
+    ...textStyles.caption,
+    color: colors.text.tertiary,
+  },
+  addressButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addressText: {
+    ...textStyles.label,
+    color: colors.text.primary,
+    marginRight: spacing.xs,
+  },
+  cartButton: {
+    position: 'relative',
+    padding: spacing.sm,
+  },
+  cartBadge: {
     position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: colors.primary[500],
+    borderRadius: borderRadius.full,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cartBadgeText: {
+    ...textStyles.caption,
+    color: colors.text.inverse,
+    fontWeight: '600',
+    fontSize: 10,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutral[100],
+    marginHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.lg,
+  },
+  searchPlaceholder: {
+    ...textStyles.body,
+    color: colors.text.tertiary,
+    marginLeft: spacing.sm,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing['4xl'],
+  },
+  promoBanner: {
+    backgroundColor: colors.primary[500],
+    marginHorizontal: spacing.lg,
+    padding: spacing.xl,
+    borderRadius: borderRadius.xl,
+    marginBottom: spacing.xl,
+  },
+  promoTitle: {
+    ...textStyles.h3,
+    color: colors.text.inverse,
+    marginBottom: spacing.xs,
+  },
+  promoSubtitle: {
+    ...textStyles.body,
+    color: colors.primary[100],
+  },
+  section: {
+    marginBottom: spacing.xl,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    ...textStyles.h4,
+    color: colors.text.primary,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  seeAllText: {
+    ...textStyles.label,
+    color: colors.primary[500],
+  },
+  categoryCard: {
+    backgroundColor: colors.neutral[100],
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginLeft: spacing.lg,
+  },
+  categoryText: {
+    ...textStyles.label,
+    color: colors.text.primary,
+  },
+  restaurantPlaceholder: {
+    backgroundColor: colors.neutral[100],
+    marginHorizontal: spacing.lg,
+    padding: spacing['3xl'],
+    borderRadius: borderRadius.xl,
+    alignItems: 'center',
+  },
+  placeholderText: {
+    ...textStyles.body,
+    color: colors.text.tertiary,
   },
 });
