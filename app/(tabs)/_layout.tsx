@@ -1,8 +1,3 @@
-/**
- * Bottom Tab Navigator Layout
- * Configures the main tab bar for the user app
- */
-
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';

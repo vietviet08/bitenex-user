@@ -2,7 +2,14 @@
  * Zustand stores barrel export
  */
 
-export { useAuthStore, useUser, useIsAuthenticated, useAuthLoading, type User } from './auth.store';
+export {
+  useAuthStore,
+  useUser,
+  useIsAuthenticated,
+  useAuthLoading,
+  useIsInitialized,
+  type User,
+} from './auth.store';
 
 export {
   useCartStore,

@@ -7,7 +7,8 @@ import { io, Socket } from 'socket.io-client';
 import { tokenService } from './api';
 
 // Environment config
-const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:8000';
+const SOCKET_URL =
+    process.env.EXPO_PUBLIC_WEBSOCKET_URL;
 
 // Socket event types for type safety
 export interface SocketEvents {

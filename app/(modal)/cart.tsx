@@ -1,8 +1,3 @@
-/**
- * Cart Modal Screen
- * Displays cart items and checkout summary
- */
-
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';

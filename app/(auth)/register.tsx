@@ -1,8 +1,3 @@
-/**
- * Register Screen
- * New user account creation
- */
-
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';

@@ -1,17 +1,43 @@
-/**
- * API client configuration
- * Axios instance with interceptors for auth and error handling
- */
-
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Environment config - replace with actual values
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL =
+    process.env.EXPO_PUBLIC_API_BASE_URL;
 
 // Token storage keys
 export const TOKEN_KEY = 'auth_token';
 export const REFRESH_TOKEN_KEY = 'refresh_token';
+
+// Flag to prevent multiple refresh calls
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value: unknown) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+// Callback for logout - will be set by auth store
+let onLogout: (() => void) | null = null;
+
+export function setLogoutCallback(callback: () => void): void {
+  onLogout = callback;
+}
+
+// Process queued requests after token refresh
+function processQueue(error: unknown, token: string | null = null): void {
+  failedQueue.forEach((promise) => {
+    if (error) {
+      promise.reject(error);
+    } else {
+      promise.resolve(token);
+    }
+  });
+  failedQueue = [];
+}
 
 // Create axios instance
 export const api = axios.create({
@@ -42,32 +68,98 @@ api.interceptors.request.use(
 
 // Response interceptor - handle errors and token refresh
 api.interceptors.response.use(
-  (response) => response,
+  (response: AxiosResponse) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config;
-
-    // Handle 401 Unauthorized - token expired
-    if (error.response?.status === 401 && originalRequest) {
-      // TODO: Implement token refresh logic
-      // 1. Get refresh token from SecureStore
-      // 2. Call refresh endpoint
-      // 3. Store new tokens
-      // 4. Retry original request
-
-      // For now, just reject - will be implemented with auth flow
-      console.warn('[API] Unauthorized - token may be expired');
-    }
-
-    // Transform error for consistent handling
-    const apiError: ApiError = {
-      message: extractErrorMessage(error),
-      status: error.response?.status,
-      code: (error.response?.data as Record<string, unknown>)?.error as string | undefined,
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
     };
 
-    return Promise.reject(apiError);
+    // Handle 401 Unauthorized - token expired
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      // Don't retry refresh or login endpoints
+      if (
+        originalRequest.url?.includes('/auth/refresh') ||
+        originalRequest.url?.includes('/auth/login')
+      ) {
+        return Promise.reject(transformError(error));
+      }
+
+      if (isRefreshing) {
+        // Wait for the ongoing refresh to complete
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        // Call refresh endpoint
+        const response = await axios.post<{
+          access_token: string;
+          refresh_token: string;
+        }>(`${API_BASE_URL}/auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+
+        const { access_token, refresh_token: newRefreshToken } = response.data;
+
+        // Store new tokens
+        await tokenService.setToken(access_token);
+        await tokenService.setRefreshToken(newRefreshToken);
+
+        // Update header for retry
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        }
+
+        processQueue(null, access_token);
+        isRefreshing = false;
+
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        isRefreshing = false;
+
+        // Clear tokens and trigger logout
+        await tokenService.clearTokens();
+        if (onLogout) {
+          onLogout();
+        }
+
+        return Promise.reject(transformError(error));
+      }
+    }
+
+    return Promise.reject(transformError(error));
   }
 );
+
+// Transform axios error to ApiError
+function transformError(error: AxiosError): ApiError {
+  const apiError: ApiError = {
+    message: extractErrorMessage(error),
+    status: error.response?.status,
+    code: (error.response?.data as Record<string, unknown>)?.error as
+      | string
+      | undefined,
+  };
+  return apiError;
+}
 
 // Error message extraction helper
 function extractErrorMessage(error: AxiosError): string {

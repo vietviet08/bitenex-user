@@ -42,4 +42,14 @@ app-example
 /ios
 /android
 
+.cursor/
+
 package-lock.json
+
+.env
+
+openspec/
+
+.github/prompts/
+
+AGENTS.md

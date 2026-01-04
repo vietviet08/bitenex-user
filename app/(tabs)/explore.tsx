@@ -1,8 +1,3 @@
-/**
- * Explore Screen
- * Search and discovery for restaurants and dishes
- */
-
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
