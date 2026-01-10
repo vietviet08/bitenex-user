@@ -2,31 +2,98 @@ import { Link, router } from "expo-router";
 import { useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { FormInput } from "@/components/forms/FormInput";
 import { useAuth } from "@/hooks/useAuth";
-import { ApiError } from "@/services/api";
+import { ApiError } from "@/services/apiError";
 import { colors, spacing, textStyles } from "@/theme";
+import {
+    combineFieldErrors,
+    validateEmail,
+    validatePassword,
+} from "@/utils/formValidation";
+import { ERROR_CODES, HTTP_STATUS } from "@/constants/errorCodes";
 
 export default function LoginScreen() {
     const { login, isLoading } = useAuth();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [emailError, setEmailError] = useState<string | undefined>();
+    const [passwordError, setPasswordError] = useState<string | undefined>();
+    const [apiError, setApiError] = useState<ApiError | null>(null);
+
+    const handleEmailChange = (text: string) => {
+        setEmail(text);
+        if (emailError) setEmailError(undefined);
+        if (apiError) setApiError(null);
+    };
+
+    const handlePasswordChange = (text: string) => {
+        setPassword(text);
+        if (passwordError) setPasswordError(undefined);
+        if (apiError) setApiError(null);
+    };
+
+    const handleApiError = (err: ApiError) => {
+        setApiError(err);
+
+        const emailFieldErrors = combineFieldErrors(err, "email");
+        const passwordFieldErrors = combineFieldErrors(err, "password");
+
+        const isAuthenticationError =
+            err.status === HTTP_STATUS.UNAUTHORIZED ||
+            err.errorCode === ERROR_CODES.AUTHENTICATION_ERROR;
+
+        if (isAuthenticationError) {
+            setEmailError(undefined);
+            setPasswordError(err.message);
+            setPassword("");
+            return;
+        }
+
+        if (err.errorCode === ERROR_CODES.VALIDATION_ERROR) {
+            setEmailError(
+                emailFieldErrors.length > 0 ? emailFieldErrors[0] : undefined
+            );
+            if (passwordFieldErrors.length > 0) {
+                setPasswordError(passwordFieldErrors[0]);
+                setPassword("");
+            } else {
+                setPasswordError(undefined);
+            }
+            return;
+        }
+
+        setEmailError(undefined);
+        setPasswordError(err.message);
+        setPassword("");
+    };
 
     const handleLogin = async () => {
-        if (!email.trim() || !password.trim()) {
-            Alert.alert("Error", "Please enter email and password");
+        setEmailError(undefined);
+        setPasswordError(undefined);
+        setApiError(null);
+
+        const emailValidation = validateEmail(email.trim());
+        const passwordValidation = validatePassword(password);
+
+        if (!emailValidation.isValid) {
+            setEmailError(emailValidation.error);
+            return;
+        }
+
+        if (!passwordValidation.isValid) {
+            setPasswordError(passwordValidation.error);
             return;
         }
 
@@ -35,11 +102,7 @@ export default function LoginScreen() {
             router.replace("/(tabs)");
         } catch (error) {
             console.error(error);
-            const apiError = error as ApiError;
-            Alert.alert(
-                "Login Failed",
-                apiError.message || "Invalid credentials"
-            );
+            handleApiError(error as ApiError);
         }
     };
 
@@ -62,36 +125,33 @@ export default function LoginScreen() {
 
                     <View style={styles.form}>
                         {/* Email Input */}
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Email</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter your email"
-                                placeholderTextColor={colors.text.tertiary}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                autoComplete="email"
-                                value={email}
-                                onChangeText={setEmail}
-                                editable={!isLoading}
-                            />
-                        </View>
+                        <FormInput
+                            label="Email"
+                            value={email}
+                            onChangeText={handleEmailChange}
+                            placeholder="Enter your email"
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            autoComplete="email"
+                            editable={!isLoading}
+                            error={!!emailError}
+                            errorMessage={emailError}
+                        />
 
                         {/* Password Input */}
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Password</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter your password"
-                                placeholderTextColor={colors.text.tertiary}
-                                secureTextEntry
-                                autoComplete="password"
-                                value={password}
-                                onChangeText={setPassword}
-                                editable={!isLoading}
-                                onSubmitEditing={handleLogin}
-                            />
-                        </View>
+                        <FormInput
+                            label="Password"
+                            value={password}
+                            onChangeText={handlePasswordChange}
+                            placeholder="Enter your password"
+                            secureTextEntry
+                            showPasswordToggle
+                            autoComplete="password"
+                            editable={!isLoading}
+                            onSubmitEditing={handleLogin}
+                            error={!!passwordError}
+                            errorMessage={passwordError}
+                        />
 
                         {/* Forgot Password */}
                         <TouchableOpacity
@@ -167,23 +227,6 @@ const styles = StyleSheet.create({
     form: {
         flex: 1,
         paddingHorizontal: spacing.lg,
-    },
-    inputContainer: {
-        marginBottom: spacing.lg,
-    },
-    label: {
-        ...textStyles.label,
-        color: colors.text.primary,
-        marginBottom: spacing.sm,
-    },
-    input: {
-        height: 48,
-        borderWidth: 1,
-        borderColor: colors.border.light,
-        borderRadius: 8,
-        paddingHorizontal: spacing.md,
-        ...textStyles.body,
-        color: colors.text.primary,
     },
     forgotPassword: {
         alignSelf: "flex-end",

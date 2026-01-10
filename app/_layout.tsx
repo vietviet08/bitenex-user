@@ -25,7 +25,7 @@ export const unstable_settings = {
 };
 
 function RootLayoutNav() {
-    const { isAuthenticated, isInitialized, isLoading } = useAuth();
+    const { isAuthenticated, isInitialized } = useAuth();
     const segments = useSegments();
     const colorScheme = useColorScheme();
     const hasBootstrapped = useRef(false);
@@ -76,7 +76,7 @@ function RootLayoutNav() {
         [colorScheme]
     );
 
-    if (!isInitialized || isLoading) {
+    if (!isInitialized) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary[500]} />

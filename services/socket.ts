@@ -4,7 +4,7 @@
  */
 
 import { io, Socket } from 'socket.io-client';
-import { tokenService } from './api';
+import { tokenService } from './tokenService';
 
 // Environment config
 const SOCKET_URL =

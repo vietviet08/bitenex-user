@@ -2,7 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { api, setLogoutCallback, tokenService } from "@/services/api";
+import { api, setLogoutCallback } from "@/services/api";
+import { tokenService } from "@/services/tokenService";
 
 export interface User {
     id: string;
