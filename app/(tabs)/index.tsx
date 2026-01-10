@@ -5,10 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/theme';
 import { useUser, useCartItemCount } from '@/store';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function HomeScreen() {
   const user = useUser();
   const cartItemCount = useCartItemCount();
+  const { logout } = useAuth();
 
   const handleOpenCart = () => {
     router.push('/(modal)/cart');
@@ -16,6 +18,15 @@ export default function HomeScreen() {
 
   const handleSearch = () => {
     router.push('/(tabs)/explore');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -35,15 +46,22 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Cart Button */}
-        <TouchableOpacity className="relative p-sm" onPress={handleOpenCart}>
-          <IconSymbol name="cart.fill" size={24} color={colors.text.primary} />
-          {cartItemCount > 0 && (
-            <View className="absolute top-0 right-0 bg-primary-500 rounded-full min-w-[18px] h-[18px] items-center justify-center">
-              <Text className="text-xs text-text-inverse font-semibold" style={{ fontSize: 10 }}>{cartItemCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View className="flex-row items-center">
+          {/* Logout Button */}
+          <TouchableOpacity className="p-sm mr-sm" onPress={handleLogout}>
+            <IconSymbol name="power" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
+
+          {/* Cart Button */}
+          <TouchableOpacity className="relative p-sm" onPress={handleOpenCart}>
+            <IconSymbol name="cart.fill" size={24} color={colors.text.primary} />
+            {cartItemCount > 0 && (
+              <View className="absolute top-0 right-0 bg-primary-500 rounded-full min-w-[18px] h-[18px] items-center justify-center">
+                <Text className="text-xs text-text-inverse font-semibold" style={{ fontSize: 10 }}>{cartItemCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search Bar */}

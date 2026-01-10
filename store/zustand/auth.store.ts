@@ -126,7 +126,12 @@ export const useAuthStore = create<AuthState>()(
 
             logout: async () => {
                 try {
-                    await api.post("/auth/logout");
+                    const refreshToken = await tokenService.getRefreshToken();
+                    if (refreshToken) {
+                        await api.post("/auth/logout", {
+                            refresh_token: refreshToken,
+                        });
+                    }
                 } catch {}
 
                 await tokenService.clearTokens();
