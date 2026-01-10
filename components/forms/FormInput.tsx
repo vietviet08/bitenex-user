@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-    StyleSheet,
     Text,
     TextInput,
     TextInputProps,
@@ -9,8 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { colors, spacing, textStyles } from "@/theme";
-import { borderRadius } from "@/theme/spacing";
+import { colors } from "@/theme";
 
 export interface FormInputProps extends TextInputProps {
     label?: string;
@@ -50,21 +48,29 @@ export function FormInput({
             : label;
     }
 
+    const inputClassName = [
+        'h-12',
+        'border',
+        hasError ? 'border-error' : 'border-border-light',
+        'rounded-md',
+        'px-md',
+        'text-base',
+        'text-text-primary',
+        'bg-background-primary',
+        isPassword && 'pr-12',
+    ].filter(Boolean).join(' ');
+
     return (
-        <View style={[styles.container, containerStyle]}>
+        <View className="mb-lg" style={containerStyle}>
             {label && (
-                <Text style={styles.label} accessibilityLabel={label}>
+                <Text className="text-sm font-medium text-text-primary mb-sm" accessibilityLabel={label}>
                     {label}
                 </Text>
             )}
-            <View style={styles.inputWrapper}>
+            <View className="relative">
                 <TextInput
-                    style={[
-                        styles.input,
-                        hasError && styles.inputError,
-                        isPassword && styles.inputWithIcon,
-                        style,
-                    ]}
+                    className={inputClassName}
+                    style={style}
                     placeholderTextColor={colors.text.tertiary}
                     secureTextEntry={actualSecureTextEntry}
                     accessibilityLabel={accessibilityLabel}
@@ -77,7 +83,7 @@ export function FormInput({
                 />
                 {isPassword && (
                     <TouchableOpacity
-                        style={styles.eyeIcon}
+                        className="absolute right-md top-0 bottom-0 justify-center items-center w-10"
                         onPress={() => setIsPasswordVisible(!isPasswordVisible)}
                         accessibilityLabel={
                             isPasswordVisible ? "Hide password" : "Show password"
@@ -94,13 +100,13 @@ export function FormInput({
             </View>
             {hasError && (
                 <View
-                    style={styles.errorContainer}
+                    className="mt-xs"
                     accessibilityLiveRegion="polite"
                 >
                     {errorMessages.map((msg) => (
                         <Text
                             key={msg}
-                            style={styles.errorText}
+                            className="text-xs text-error"
                             accessibilityRole="alert"
                         >
                             {msg}
@@ -111,49 +117,3 @@ export function FormInput({
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        marginBottom: spacing.lg,
-    },
-    label: {
-        ...textStyles.label,
-        color: colors.text.primary,
-        marginBottom: spacing.sm,
-    },
-    inputWrapper: {
-        position: "relative",
-    },
-    input: {
-        height: 48,
-        borderWidth: 1,
-        borderColor: colors.border.light,
-        borderRadius: borderRadius.md,
-        paddingHorizontal: spacing.md,
-        ...textStyles.body,
-        color: colors.text.primary,
-        backgroundColor: colors.background.primary,
-    },
-    inputWithIcon: {
-        paddingRight: 48,
-    },
-    inputError: {
-        borderColor: colors.error,
-    },
-    eyeIcon: {
-        position: "absolute",
-        right: spacing.md,
-        top: 0,
-        bottom: 0,
-        justifyContent: "center",
-        alignItems: "center",
-        width: 40,
-    },
-    errorContainer: {
-        marginTop: spacing.xs,
-    },
-    errorText: {
-        ...textStyles.caption,
-        color: colors.error,
-    },
-});

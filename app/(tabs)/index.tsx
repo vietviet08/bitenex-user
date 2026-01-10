@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing, textStyles, borderRadius } from '@/theme';
+import { colors } from '@/theme';
 import { useUser, useCartItemCount } from '@/store';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
@@ -19,15 +19,15 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background-primary" edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.locationContainer}>
+      <View className="flex-row justify-between items-center px-lg py-md">
+        <View className="flex-row items-center flex-1">
           <IconSymbol name="location.fill" size={20} color={colors.primary[500]} />
-          <View style={styles.locationText}>
-            <Text style={styles.deliveryLabel}>Deliver to</Text>
-            <TouchableOpacity style={styles.addressButton}>
-              <Text style={styles.addressText} numberOfLines={1}>
+          <View className="ml-sm flex-1">
+            <Text className="text-xs text-text-tertiary">Deliver to</Text>
+            <TouchableOpacity className="flex-row items-center">
+              <Text className="text-sm font-medium text-text-primary mr-xs" numberOfLines={1}>
                 {user ? 'Select address' : 'Set your location'}
               </Text>
               <IconSymbol name="chevron.down" size={16} color={colors.text.secondary} />
@@ -36,41 +36,41 @@ export default function HomeScreen() {
         </View>
 
         {/* Cart Button */}
-        <TouchableOpacity style={styles.cartButton} onPress={handleOpenCart}>
+        <TouchableOpacity className="relative p-sm" onPress={handleOpenCart}>
           <IconSymbol name="cart.fill" size={24} color={colors.text.primary} />
           {cartItemCount > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
+            <View className="absolute top-0 right-0 bg-primary-500 rounded-full min-w-[18px] h-[18px] items-center justify-center">
+              <Text className="text-xs text-text-inverse font-semibold" style={{ fontSize: 10 }}>{cartItemCount}</Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
-      <TouchableOpacity style={styles.searchBar} onPress={handleSearch}>
+      <TouchableOpacity className="flex-row items-center bg-neutral-100 mx-lg px-md py-md rounded-lg mb-lg" onPress={handleSearch}>
         <IconSymbol name="magnifyingglass" size={20} color={colors.text.tertiary} />
-        <Text style={styles.searchPlaceholder}>Search restaurants or dishes...</Text>
+        <Text className="text-base text-text-tertiary ml-sm">Search restaurants or dishes...</Text>
       </TouchableOpacity>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Promotions Banner - Placeholder */}
-        <View style={styles.promoBanner}>
-          <Text style={styles.promoTitle}>🔥 Free Delivery</Text>
-          <Text style={styles.promoSubtitle}>On your first 3 orders</Text>
+        <View className="bg-primary-500 mx-lg p-xl rounded-2xl mb-xl">
+          <Text className="text-2xl font-semibold text-text-inverse mb-xs">🔥 Free Delivery</Text>
+          <Text className="text-base text-primary-100">On your first 3 orders</Text>
         </View>
 
         {/* Categories - Placeholder */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+        <View className="mb-xl">
+          <Text className="text-xl font-semibold text-text-primary px-lg mb-md">Categories</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {['🍔 Burgers', '🍕 Pizza', '🍜 Noodles', '🍣 Sushi', '🥗 Salads', '🧁 Desserts'].map(
               (category, index) => (
-                <TouchableOpacity key={index} style={styles.categoryCard}>
-                  <Text style={styles.categoryText}>{category}</Text>
+                <TouchableOpacity key={index} className="bg-neutral-100 px-lg py-md rounded-lg ml-lg">
+                  <Text className="text-sm font-medium text-text-primary">{category}</Text>
                 </TouchableOpacity>
               )
             )}
@@ -78,170 +78,34 @@ export default function HomeScreen() {
         </View>
 
         {/* Featured Restaurants - Placeholder */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Featured Restaurants</Text>
+        <View className="mb-xl">
+          <View className="flex-row justify-between items-center px-lg mb-md">
+            <Text className="text-xl font-semibold text-text-primary px-lg mb-md">Featured Restaurants</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text className="text-sm font-medium text-primary-500">See all</Text>
             </TouchableOpacity>
           </View>
 
           {/* Restaurant cards will go here */}
-          <View style={styles.restaurantPlaceholder}>
-            <Text style={styles.placeholderText}>Restaurant cards coming soon</Text>
+          <View className="bg-neutral-100 mx-lg p-3xl rounded-2xl items-center">
+            <Text className="text-base text-text-tertiary">Restaurant cards coming soon</Text>
           </View>
         </View>
 
         {/* Near You - Placeholder */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Near You</Text>
+        <View className="mb-xl">
+          <View className="flex-row justify-between items-center px-lg mb-md">
+            <Text className="text-xl font-semibold text-text-primary px-lg mb-md">Near You</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text className="text-sm font-medium text-primary-500">See all</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.restaurantPlaceholder}>
-            <Text style={styles.placeholderText}>Nearby restaurants coming soon</Text>
+          <View className="bg-neutral-100 mx-lg p-3xl rounded-2xl items-center">
+            <Text className="text-base text-text-tertiary">Nearby restaurants coming soon</Text>
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  locationText: {
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  deliveryLabel: {
-    ...textStyles.caption,
-    color: colors.text.tertiary,
-  },
-  addressButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  addressText: {
-    ...textStyles.label,
-    color: colors.text.primary,
-    marginRight: spacing.xs,
-  },
-  cartButton: {
-    position: 'relative',
-    padding: spacing.sm,
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: colors.primary[500],
-    borderRadius: borderRadius.full,
-    minWidth: 18,
-    height: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cartBadgeText: {
-    ...textStyles.caption,
-    color: colors.text.inverse,
-    fontWeight: '600',
-    fontSize: 10,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutral[100],
-    marginHorizontal: spacing.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.lg,
-  },
-  searchPlaceholder: {
-    ...textStyles.body,
-    color: colors.text.tertiary,
-    marginLeft: spacing.sm,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing['4xl'],
-  },
-  promoBanner: {
-    backgroundColor: colors.primary[500],
-    marginHorizontal: spacing.lg,
-    padding: spacing.xl,
-    borderRadius: borderRadius.xl,
-    marginBottom: spacing.xl,
-  },
-  promoTitle: {
-    ...textStyles.h3,
-    color: colors.text.inverse,
-    marginBottom: spacing.xs,
-  },
-  promoSubtitle: {
-    ...textStyles.body,
-    color: colors.primary[100],
-  },
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    ...textStyles.h4,
-    color: colors.text.primary,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  seeAllText: {
-    ...textStyles.label,
-    color: colors.primary[500],
-  },
-  categoryCard: {
-    backgroundColor: colors.neutral[100],
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    marginLeft: spacing.lg,
-  },
-  categoryText: {
-    ...textStyles.label,
-    color: colors.text.primary,
-  },
-  restaurantPlaceholder: {
-    backgroundColor: colors.neutral[100],
-    marginHorizontal: spacing.lg,
-    padding: spacing['3xl'],
-    borderRadius: borderRadius.xl,
-    alignItems: 'center',
-  },
-  placeholderText: {
-    ...textStyles.body,
-    color: colors.text.tertiary,
-  },
-});

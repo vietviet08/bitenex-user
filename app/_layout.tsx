@@ -1,3 +1,4 @@
+import "../global.css";
 import {
     DarkTheme,
     DefaultTheme,
@@ -7,7 +8,7 @@ import { Redirect, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useRef } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -78,7 +79,7 @@ function RootLayoutNav() {
 
     if (!isInitialized) {
         return (
-            <View style={styles.loadingContainer}>
+            <View className="flex-1 justify-center items-center bg-background-primary">
                 <ActivityIndicator size="large" color={colors.primary[500]} />
             </View>
         );
@@ -137,12 +138,3 @@ export default function RootLayout() {
         </GestureHandlerRootView>
     );
 }
-
-const styles = StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: colors.background.primary,
-    },
-});

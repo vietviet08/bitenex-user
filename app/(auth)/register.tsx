@@ -1,8 +1,6 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { colors, spacing, textStyles } from '@/theme';
 
 export default function RegisterScreen() {
   // TODO: Implement registration form with useAuthStore
@@ -13,29 +11,29 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Join Bitenex to start ordering</Text>
+    <SafeAreaView className="flex-1 bg-background-primary">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View className="px-lg pt-3xl pb-xl">
+          <Text className="text-3xl font-bold text-text-primary mb-xs">Create account</Text>
+          <Text className="text-base text-text-secondary">Join Bitenex to start ordering</Text>
         </View>
 
-        <View style={styles.form}>
+        <View className="flex-1 px-lg pb-2xl">
           {/* Name Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Full Name</Text>
+          <View className="mb-lg">
+            <Text className="text-sm font-medium text-text-primary mb-sm">Full Name</Text>
             <TextInput
-              style={styles.input}
+              className="h-12 border border-border-light rounded-md px-md text-base"
               placeholder="Enter your full name"
               autoComplete="name"
             />
           </View>
 
           {/* Email Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
+          <View className="mb-lg">
+            <Text className="text-sm font-medium text-text-primary mb-sm">Email</Text>
             <TextInput
-              style={styles.input}
+              className="h-12 border border-border-light rounded-md px-md text-base"
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -44,10 +42,10 @@ export default function RegisterScreen() {
           </View>
 
           {/* Phone Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Phone Number</Text>
+          <View className="mb-lg">
+            <Text className="text-sm font-medium text-text-primary mb-sm">Phone Number</Text>
             <TextInput
-              style={styles.input}
+              className="h-12 border border-border-light rounded-md px-md text-base"
               placeholder="Enter your phone number"
               keyboardType="phone-pad"
               autoComplete="tel"
@@ -55,10 +53,10 @@ export default function RegisterScreen() {
           </View>
 
           {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
+          <View className="mb-lg">
+            <Text className="text-sm font-medium text-text-primary mb-sm">Password</Text>
             <TextInput
-              style={styles.input}
+              className="h-12 border border-border-light rounded-md px-md text-base"
               placeholder="Create a password"
               secureTextEntry
               autoComplete="password-new"
@@ -66,10 +64,10 @@ export default function RegisterScreen() {
           </View>
 
           {/* Confirm Password Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirm Password</Text>
+          <View className="mb-lg">
+            <Text className="text-sm font-medium text-text-primary mb-sm">Confirm Password</Text>
             <TextInput
-              style={styles.input}
+              className="h-12 border border-border-light rounded-md px-md text-base"
               placeholder="Confirm your password"
               secureTextEntry
               autoComplete="password-new"
@@ -77,23 +75,23 @@ export default function RegisterScreen() {
           </View>
 
           {/* Terms */}
-          <Text style={styles.terms}>
+          <Text className="text-sm text-text-secondary text-center mb-2xl" style={{ lineHeight: 20 }}>
             By signing up, you agree to our{' '}
-            <Text style={styles.linkText}>Terms of Service</Text> and{' '}
-            <Text style={styles.linkText}>Privacy Policy</Text>
+            <Text className="text-primary-500">Terms of Service</Text> and{' '}
+            <Text className="text-primary-500">Privacy Policy</Text>
           </Text>
 
           {/* Register Button */}
-          <TouchableOpacity style={styles.button} onPress={handleRegister}>
-            <Text style={styles.buttonText}>Create Account</Text>
+          <TouchableOpacity className="h-[52px] bg-primary-500 rounded-xl items-center justify-center mb-2xl" onPress={handleRegister}>
+            <Text className="text-base font-semibold text-text-inverse">Create Account</Text>
           </TouchableOpacity>
 
           {/* Login Link */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+          <View className="flex-row justify-center items-center">
+            <Text className="text-base text-text-secondary">Already have an account? </Text>
             <Link href="/(auth)/login" asChild>
               <TouchableOpacity>
-                <Text style={styles.linkText}>Sign In</Text>
+                <Text className="text-base text-primary-500 font-semibold">Sign In</Text>
               </TouchableOpacity>
             </Link>
           </View>
@@ -102,81 +100,3 @@ export default function RegisterScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing['3xl'],
-    paddingBottom: spacing.xl,
-  },
-  title: {
-    ...textStyles.h2,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...textStyles.body,
-    color: colors.text.secondary,
-  },
-  form: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing['2xl'],
-  },
-  inputContainer: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    ...textStyles.label,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    ...textStyles.body,
-  },
-  terms: {
-    ...textStyles.bodySmall,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: spacing['2xl'],
-    lineHeight: 20,
-  },
-  button: {
-    height: 52,
-    backgroundColor: colors.primary[500],
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing['2xl'],
-  },
-  buttonText: {
-    ...textStyles.button,
-    color: colors.text.inverse,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerText: {
-    ...textStyles.body,
-    color: colors.text.secondary,
-  },
-  linkText: {
-    ...textStyles.body,
-    color: colors.primary[500],
-    fontWeight: '600',
-  },
-});

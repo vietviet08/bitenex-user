@@ -5,7 +5,6 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    StyleSheet,
     Text,
     TouchableOpacity,
     View,
@@ -15,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { FormInput } from "@/components/forms/FormInput";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/apiError";
-import { colors, spacing, textStyles } from "@/theme";
+import { colors } from "@/theme";
 import {
     combineFieldErrors,
     validateEmail,
@@ -107,23 +106,23 @@ export default function LoginScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView className="flex-1 bg-background-primary">
             <KeyboardAvoidingView
-                style={styles.keyboardView}
+                className="flex-1"
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
                 <ScrollView
-                    contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={{ flexGrow: 1 }}
                     keyboardShouldPersistTaps="handled"
                 >
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Welcome back</Text>
-                        <Text style={styles.subtitle}>
+                    <View className="px-lg pt-4xl pb-2xl">
+                        <Text className="text-3xl font-bold text-text-primary mb-xs">Welcome back</Text>
+                        <Text className="text-base text-text-secondary">
                             Sign in to continue ordering
                         </Text>
                     </View>
 
-                    <View style={styles.form}>
+                    <View className="flex-1 px-lg">
                         {/* Email Input */}
                         <FormInput
                             label="Email"
@@ -155,20 +154,17 @@ export default function LoginScreen() {
 
                         {/* Forgot Password */}
                         <TouchableOpacity
-                            style={styles.forgotPassword}
+                            className="self-end mb-2xl"
                             disabled={isLoading}
                         >
-                            <Text style={styles.forgotPasswordText}>
+                            <Text className="text-sm text-primary-500">
                                 Forgot password?
                             </Text>
                         </TouchableOpacity>
 
                         {/* Login Button */}
                         <TouchableOpacity
-                            style={[
-                                styles.button,
-                                isLoading && styles.buttonDisabled,
-                            ]}
+                            className={`h-[52px] bg-primary-500 rounded-xl items-center justify-center mb-2xl ${isLoading ? 'opacity-70' : ''}`}
                             onPress={handleLogin}
                             disabled={isLoading}
                         >
@@ -177,18 +173,18 @@ export default function LoginScreen() {
                                     color={colors.text.inverse}
                                 />
                             ) : (
-                                <Text style={styles.buttonText}>Sign In</Text>
+                                <Text className="text-base font-semibold text-text-inverse">Sign In</Text>
                             )}
                         </TouchableOpacity>
 
                         {/* Register Link */}
-                        <View style={styles.footer}>
-                            <Text style={styles.footerText}>
+                        <View className="flex-row justify-center items-center">
+                            <Text className="text-base text-text-secondary">
                                 {"Don't have an account? "}
                             </Text>
                             <Link href="/(auth)/register" asChild>
                                 <TouchableOpacity disabled={isLoading}>
-                                    <Text style={styles.linkText}>Sign Up</Text>
+                                    <Text className="text-base text-primary-500 font-semibold">Sign Up</Text>
                                 </TouchableOpacity>
                             </Link>
                         </View>
@@ -198,71 +194,3 @@ export default function LoginScreen() {
         </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background.primary,
-    },
-    keyboardView: {
-        flex: 1,
-    },
-    scrollContent: {
-        flexGrow: 1,
-    },
-    header: {
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing["4xl"],
-        paddingBottom: spacing["2xl"],
-    },
-    title: {
-        ...textStyles.h2,
-        color: colors.text.primary,
-        marginBottom: spacing.xs,
-    },
-    subtitle: {
-        ...textStyles.body,
-        color: colors.text.secondary,
-    },
-    form: {
-        flex: 1,
-        paddingHorizontal: spacing.lg,
-    },
-    forgotPassword: {
-        alignSelf: "flex-end",
-        marginBottom: spacing["2xl"],
-    },
-    forgotPasswordText: {
-        ...textStyles.bodySmall,
-        color: colors.primary[500],
-    },
-    button: {
-        height: 52,
-        backgroundColor: colors.primary[500],
-        borderRadius: 12,
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: spacing["2xl"],
-    },
-    buttonDisabled: {
-        opacity: 0.7,
-    },
-    buttonText: {
-        ...textStyles.button,
-        color: colors.text.inverse,
-    },
-    footer: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    footerText: {
-        ...textStyles.body,
-        color: colors.text.secondary,
-    },
-    linkText: {
-        ...textStyles.body,
-        color: colors.primary[500],
-        fontWeight: "600",
-    },
-});

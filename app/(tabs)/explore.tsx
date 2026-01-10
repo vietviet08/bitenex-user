@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing, textStyles, borderRadius } from '@/theme';
+import { colors } from '@/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { debounce } from '@/utils';
 
@@ -53,13 +53,14 @@ export default function ExploreScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background-primary" edges={['top']}>
       {/* Search Header */}
-      <View style={styles.header}>
-        <View style={styles.searchContainer}>
+      <View className="px-lg py-md border-b border-border-light">
+        <View className="flex-row items-center bg-neutral-100 px-md rounded-lg h-11">
           <IconSymbol name="magnifyingglass" size={20} color={colors.text.tertiary} />
           <TextInput
-            style={styles.searchInput}
+            className="flex-1 text-base text-text-primary ml-sm"
+            style={{ paddingVertical: 0 }}
             placeholder="Search restaurants, dishes..."
             placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
@@ -85,25 +86,25 @@ export default function ExploreScreen() {
           ListHeaderComponent={() => (
             <>
               {/* Popular Searches */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Popular Searches</Text>
-                <View style={styles.tagsContainer}>
+              <View className="px-lg pt-xl">
+                <Text className="text-xl font-semibold text-text-primary mb-md">Popular Searches</Text>
+                <View className="flex-row flex-wrap" style={{ gap: 8 }}>
                   {['Bubble Tea', 'Pizza', 'Pho', 'Burger', 'Sushi', 'Coffee'].map((tag, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={styles.tag}
+                      className="bg-neutral-100 px-md py-sm rounded-full"
                       onPress={() => onChangeText(tag)}
                     >
-                      <Text style={styles.tagText}>{tag}</Text>
+                      <Text className="text-sm font-medium text-text-primary">{tag}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
 
               {/* Cuisines */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Cuisines</Text>
-                <View style={styles.cuisinesGrid}>
+              <View className="px-lg pt-xl">
+                <Text className="text-xl font-semibold text-text-primary mb-md">Cuisines</Text>
+                <View className="flex-row flex-wrap" style={{ gap: 12 }}>
                   {[
                     { icon: '🇻🇳', name: 'Vietnamese' },
                     { icon: '🇯🇵', name: 'Japanese' },
@@ -112,9 +113,9 @@ export default function ExploreScreen() {
                     { icon: '🇹🇭', name: 'Thai' },
                     { icon: '🇨🇳', name: 'Chinese' },
                   ].map((cuisine, index) => (
-                    <TouchableOpacity key={index} style={styles.cuisineCard}>
-                      <Text style={styles.cuisineIcon}>{cuisine.icon}</Text>
-                      <Text style={styles.cuisineName}>{cuisine.name}</Text>
+                    <TouchableOpacity key={index} className="w-[30%] bg-neutral-50 p-lg rounded-lg items-center">
+                      <Text className="text-[32px] mb-sm">{cuisine.icon}</Text>
+                      <Text className="text-xs font-medium text-text-primary">{cuisine.name}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -128,29 +129,29 @@ export default function ExploreScreen() {
         <FlatList
           data={results}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.resultsContent}
+          contentContainerStyle={{ padding: 16 }}
           ListEmptyComponent={() =>
             !isSearching ? (
-              <View style={styles.emptyResults}>
-                <Text style={styles.emptyTitle}>No results found</Text>
-                <Text style={styles.emptySubtitle}>
+              <View className="items-center py-4xl">
+                <Text className="text-xl font-semibold text-text-primary mb-sm">No results found</Text>
+                <Text className="text-base text-text-tertiary">
                   Try searching for something else
                 </Text>
               </View>
             ) : null
           }
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.resultItem}>
-              <View style={styles.resultIcon}>
+            <TouchableOpacity className="flex-row items-center py-md border-b border-border-light">
+              <View className="w-10 h-10 rounded-md bg-primary-50 items-center justify-center mr-md">
                 <IconSymbol
                   name={item.type === 'restaurant' ? 'storefront.fill' : 'fork.knife'}
                   size={20}
                   color={colors.primary[500]}
                 />
               </View>
-              <View style={styles.resultInfo}>
-                <Text style={styles.resultName}>{item.name}</Text>
-                <Text style={styles.resultSubtitle}>{item.subtitle}</Text>
+              <View className="flex-1">
+                <Text className="text-base text-text-primary">{item.name}</Text>
+                <Text className="text-sm text-text-tertiary">{item.subtitle}</Text>
               </View>
               <IconSymbol name="chevron.right" size={16} color={colors.text.tertiary} />
             </TouchableOpacity>
@@ -160,118 +161,3 @@ export default function ExploreScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutral[100],
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.lg,
-    height: 44,
-  },
-  searchInput: {
-    flex: 1,
-    ...textStyles.body,
-    color: colors.text.primary,
-    marginLeft: spacing.sm,
-    paddingVertical: 0,
-  },
-  section: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-  },
-  sectionTitle: {
-    ...textStyles.h4,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  tag: {
-    backgroundColor: colors.neutral[100],
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-  },
-  tagText: {
-    ...textStyles.label,
-    color: colors.text.primary,
-  },
-  cuisinesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  cuisineCard: {
-    width: '30%',
-    backgroundColor: colors.neutral[50],
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-  },
-  cuisineIcon: {
-    fontSize: 32,
-    marginBottom: spacing.sm,
-  },
-  cuisineName: {
-    ...textStyles.labelSmall,
-    color: colors.text.primary,
-  },
-  resultsContent: {
-    padding: spacing.lg,
-  },
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  resultIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  resultInfo: {
-    flex: 1,
-  },
-  resultName: {
-    ...textStyles.body,
-    color: colors.text.primary,
-  },
-  resultSubtitle: {
-    ...textStyles.bodySmall,
-    color: colors.text.tertiary,
-  },
-  emptyResults: {
-    alignItems: 'center',
-    paddingVertical: spacing['4xl'],
-  },
-  emptyTitle: {
-    ...textStyles.h4,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  emptySubtitle: {
-    ...textStyles.body,
-    color: colors.text.tertiary,
-  },
-});
