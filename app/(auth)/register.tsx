@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     ScrollView,
     Text,
@@ -40,6 +41,7 @@ export default function RegisterScreen() {
     const [passwordError, setPasswordError] = useState<string | undefined>();
     const [confirmPasswordError, setConfirmPasswordError] = useState<string | undefined>();
     const [apiError, setApiError] = useState<ApiError | null>(null);
+    const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
 
     const handleFullNameChange = (text: string) => {
         setFullName(text);
@@ -164,11 +166,18 @@ export default function RegisterScreen() {
                 fullName.trim(),
                 phone.trim() || null
             );
-            router.replace("/(tabs)");
+            // Show verify email modal
+            setShowVerifyEmailModal(true);
         } catch (error) {
             console.error(error);
             handleApiError(error as ApiError);
         }
+    };
+
+    const handleCloseModal = () => {
+        setShowVerifyEmailModal(false);
+        // Navigate to login screen after closing modal
+        router.replace("/(auth)/login");
     };
 
     return (
@@ -301,6 +310,49 @@ export default function RegisterScreen() {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            {/* Verify Email Modal */}
+            <Modal
+                visible={showVerifyEmailModal}
+                transparent
+                animationType="fade"
+                onRequestClose={handleCloseModal}
+            >
+                <View className="flex-1 bg-black/50 items-center justify-center px-lg">
+                    <View className="bg-background-primary rounded-2xl p-2xl w-full max-w-md">
+                        <View className="items-center mb-xl">
+                            <View className="w-16 h-16 bg-primary-100 rounded-full items-center justify-center mb-lg">
+                                <Text className="text-3xl">✉️</Text>
+                            </View>
+                            <Text className="text-2xl font-bold text-text-primary mb-sm text-center">
+                                Check Your Email
+                            </Text>
+                            <Text className="text-base text-text-secondary text-center">
+                                We&apos;ve sent a verification link to
+                            </Text>
+                            <Text className="text-base font-semibold text-primary-500 mt-xs">
+                                {email.trim()}
+                            </Text>
+                        </View>
+
+                        <View className="mb-xl">
+                            <Text className="text-sm text-text-secondary text-center leading-5">
+                                Please check your inbox and click on the verification link to verify your email address. 
+                                You&apos;ll need to verify your email before you can sign in.
+                            </Text>
+                        </View>
+
+                        <TouchableOpacity
+                            className="h-[52px] bg-primary-500 rounded-xl items-center justify-center"
+                            onPress={handleCloseModal}
+                        >
+                            <Text className="text-base font-semibold text-text-inverse">
+                                Got it
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
