@@ -75,3 +75,73 @@ export function getFieldError(
     const errors = combineFieldErrors(apiError, fieldName);
     return errors.length > 0 ? errors[0] : undefined;
 }
+
+export function validateFullName(fullName: string): ValidationResult {
+    if (!fullName?.trim()) {
+        return {
+            isValid: false,
+            error: "Full name is required",
+        };
+    }
+
+    const trimmed = fullName.trim();
+    if (trimmed.length < 2) {
+        return {
+            isValid: false,
+            error: "Full name must be at least 2 characters",
+        };
+    }
+
+    if (trimmed.length > 100) {
+        return {
+            isValid: false,
+            error: "Full name must be at most 100 characters",
+        };
+    }
+
+    return { isValid: true };
+}
+
+export function validatePhone(phone: string): ValidationResult {
+    if (!phone?.trim()) {
+        return { isValid: true };
+    }
+
+    const trimmed = phone.trim();
+    if (trimmed.length > 20) {
+        return {
+            isValid: false,
+            error: "Phone number must be at most 20 characters",
+        };
+    }
+
+    if (!validators.isValidPhone(trimmed)) {
+        return {
+            isValid: false,
+            error: "Please enter a valid phone number",
+        };
+    }
+
+    return { isValid: true };
+}
+
+export function validateConfirmPassword(
+    password: string,
+    confirmPassword: string
+): ValidationResult {
+    if (!confirmPassword?.trim()) {
+        return {
+            isValid: false,
+            error: "Please confirm your password",
+        };
+    }
+
+    if (confirmPassword !== password) {
+        return {
+            isValid: false,
+            error: "Passwords do not match",
+        };
+    }
+
+    return { isValid: true };
+}

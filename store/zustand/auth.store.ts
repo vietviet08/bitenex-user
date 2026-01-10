@@ -26,6 +26,18 @@ interface LoginResponse {
     user: User;
 }
 
+interface RegisterRequest {
+    email: string;
+    password: string;
+    full_name: string;
+    phone?: string | null;
+}
+
+interface RegisterResponse {
+    user: User;
+    message: string;
+}
+
 interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
@@ -34,6 +46,7 @@ interface AuthState {
 
     bootstrap: () => Promise<void>;
     login: (email: string, password: string) => Promise<void>;
+    register: (email: string, password: string, fullName: string, phone?: string | null) => Promise<void>;
     logout: () => Promise<void>;
     setLoading: (loading: boolean) => void;
 }
@@ -118,6 +131,29 @@ export const useAuthStore = create<AuthState>()(
                         isAuthenticated: true,
                         isLoading: false,
                     });
+                } catch (error) {
+                    set({ isLoading: false });
+                    throw error;
+                }
+            },
+
+            register: async (email: string, password: string, fullName: string, phone?: string | null) => {
+                set({ isLoading: true });
+
+                try {
+                    const request: RegisterRequest = {
+                        email: email.trim().toLowerCase(),
+                        password,
+                        full_name: fullName.trim(),
+                        phone: phone?.trim() || null,
+                    };
+
+                    await api.post<RegisterResponse>(
+                        "/auth/register",
+                        request
+                    );
+
+                    set({ isLoading: false });
                 } catch (error) {
                     set({ isLoading: false });
                     throw error;

@@ -10,6 +10,7 @@ import { useMemo } from "react";
 type AuthState = ReturnType<typeof useAuthStore.getState>;
 const selectBootstrap = (state: AuthState) => state.bootstrap;
 const selectLogin = (state: AuthState) => state.login;
+const selectRegister = (state: AuthState) => state.register;
 const selectLogout = (state: AuthState) => state.logout;
 
 export function useAuth() {
@@ -20,6 +21,7 @@ export function useAuth() {
 
     const bootstrap = useAuthStore(selectBootstrap);
     const login = useAuthStore(selectLogin);
+    const register = useAuthStore(selectRegister);
     const logout = useAuthStore(selectLogout);
 
     return useMemo(
@@ -31,6 +33,7 @@ export function useAuth() {
 
             bootstrap,
             login,
+            register,
             logout,
         }),
         [
@@ -40,6 +43,7 @@ export function useAuth() {
             isInitialized,
             bootstrap,
             login,
+            register,
             logout,
         ]
     );
