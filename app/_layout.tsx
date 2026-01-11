@@ -17,6 +17,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/hooks/useAuth";
 import { socketClient } from "@/services";
 import { getHasRehydrated, useAuthStore } from "@/store/zustand/auth.store";
+import { useOnboardingStore } from "@/store/zustand/onboarding.store";
 import { colors } from "@/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -27,12 +28,24 @@ export const unstable_settings = {
 
 function RootLayoutNav() {
     const { isAuthenticated, isInitialized } = useAuth();
+    const {
+        hasCompletedWalkthrough,
+        isChecking,
+        isReady,
+        checkWalkthroughStatus,
+    } = useOnboardingStore();
     const segments = useSegments();
     const colorScheme = useColorScheme();
     const hasBootstrapped = useRef(false);
     const rehydrationCheckRef = useRef<ReturnType<typeof setTimeout> | null>(
         null
     );
+    const hasCheckedWalkthrough = useRef(false);
+    const checkWalkthroughStatusRef = useRef(checkWalkthroughStatus);
+
+    useEffect(() => {
+        checkWalkthroughStatusRef.current = checkWalkthroughStatus;
+    }, [checkWalkthroughStatus]);
 
     useEffect(() => {
         if (!hasBootstrapped.current && !isInitialized) {
@@ -59,6 +72,15 @@ function RootLayoutNav() {
     }, [isInitialized]);
 
     useEffect(() => {
+        if (isInitialized && !hasCheckedWalkthrough.current) {
+            hasCheckedWalkthrough.current = true;
+            if (!hasCompletedWalkthrough) {
+                checkWalkthroughStatusRef.current();
+            }
+        }
+    }, [isInitialized, hasCompletedWalkthrough]);
+
+    useEffect(() => {
         if (isAuthenticated) {
             socketClient.connect();
         } else {
@@ -77,7 +99,7 @@ function RootLayoutNav() {
         [colorScheme]
     );
 
-    if (!isInitialized) {
+    if (!isInitialized || !isReady || isChecking) {
         return (
             <View className="flex-1 justify-center items-center bg-background-primary">
                 <ActivityIndicator size="large" color={colors.primary[500]} />
@@ -85,20 +107,34 @@ function RootLayoutNav() {
         );
     }
 
+    const inOnboardingGroup = segments[0] === "(onboarding)";
     const inAuthGroup = segments[0] === "(auth)";
 
-    if (!isAuthenticated && !inAuthGroup) {
-        return <Redirect href="/(auth)/login" />;
+    if (!hasCompletedWalkthrough && !inOnboardingGroup) {
+        return <Redirect href="/(onboarding)/walkthrough" />;
     }
 
-    if (isAuthenticated && inAuthGroup) {
-        return <Redirect href="/(tabs)" />;
+    if (hasCompletedWalkthrough) {
+        if (!isAuthenticated && !inAuthGroup && !inOnboardingGroup) {
+            return <Redirect href="/(auth)/login" />;
+        }
+        if (isAuthenticated && (inAuthGroup || inOnboardingGroup)) {
+            return <Redirect href="/(tabs)" />;
+        }
     }
 
     return (
         <ThemeProvider value={theme}>
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
+
+                <Stack.Screen
+                    name="(onboarding)"
+                    options={{
+                        headerShown: false,
+                        animation: "none",
+                    }}
+                />
 
                 <Stack.Screen
                     name="(auth)"
