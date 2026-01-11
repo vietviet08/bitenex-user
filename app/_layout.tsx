@@ -17,6 +17,11 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/hooks/useAuth";
 import { socketClient } from "@/services";
 import { getHasRehydrated, useAuthStore } from "@/store/zustand/auth.store";
+import {
+    useHasCompletedWalkthrough,
+    useOnboardingChecked,
+    useOnboardingStore,
+} from "@/store/zustand/onboarding.store";
 import { colors } from "@/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -33,6 +38,16 @@ function RootLayoutNav() {
     const rehydrationCheckRef = useRef<ReturnType<typeof setTimeout> | null>(
         null
     );
+
+    const hasCompletedWalkthrough = useHasCompletedWalkthrough();
+    const isOnboardingChecked = useOnboardingChecked();
+    const checkWalkthroughStatus = useOnboardingStore(
+        (state) => state.checkWalkthroughStatus
+    );
+
+    useEffect(() => {
+        checkWalkthroughStatus();
+    }, [checkWalkthroughStatus]);
 
     useEffect(() => {
         if (!hasBootstrapped.current && !isInitialized) {
@@ -67,17 +82,17 @@ function RootLayoutNav() {
     }, [isAuthenticated]);
 
     useEffect(() => {
-        if (isInitialized) {
+        if (isInitialized && isOnboardingChecked) {
             SplashScreen.hideAsync();
         }
-    }, [isInitialized]);
+    }, [isInitialized, isOnboardingChecked]);
 
     const theme = useMemo(
         () => (colorScheme === "dark" ? DarkTheme : DefaultTheme),
         [colorScheme]
     );
 
-    if (!isInitialized) {
+    if (!isInitialized || !isOnboardingChecked) {
         return (
             <View className="flex-1 justify-center items-center bg-background-primary">
                 <ActivityIndicator size="large" color={colors.primary[500]} />
@@ -86,8 +101,20 @@ function RootLayoutNav() {
     }
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inOnboardingGroup = segments[0] === "(onboarding)";
 
-    if (!isAuthenticated && !inAuthGroup) {
+    if (!hasCompletedWalkthrough && !inOnboardingGroup) {
+        return <Redirect href="/(onboarding)/walkthrough" />;
+    }
+
+    if (hasCompletedWalkthrough && inOnboardingGroup) {
+        if (isAuthenticated) {
+            return <Redirect href="/(tabs)" />;
+        }
+        return <Redirect href="/(auth)/login" />;
+    }
+
+    if (!isAuthenticated && !inAuthGroup && !inOnboardingGroup) {
         return <Redirect href="/(auth)/login" />;
     }
 
@@ -99,6 +126,14 @@ function RootLayoutNav() {
         <ThemeProvider value={theme}>
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
+
+                <Stack.Screen
+                    name="(onboarding)"
+                    options={{
+                        headerShown: false,
+                        animation: "fade",
+                    }}
+                />
 
                 <Stack.Screen
                     name="(auth)"

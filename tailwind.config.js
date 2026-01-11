@@ -10,19 +10,6 @@ module.exports = {
       colors: {
         // Primary brand colors
         primary: {
-          50: '#FFF5F0',
-          100: '#FFEBE0',
-          200: '#FFD1B8',
-          300: '#FFB78F',
-          400: '#FF9D66',
-          500: '#FF6B35', // Main brand color
-          600: '#E55A2B',
-          700: '#CC4A22',
-          800: '#993718',
-          900: '#66250F',
-        },
-        // Secondary accent colors
-        secondary: {
           50: '#F0FDF4',
           100: '#DCFCE7',
           200: '#BBF7D0',
@@ -33,6 +20,19 @@ module.exports = {
           700: '#15803D',
           800: '#166534',
           900: '#14532D',
+        },
+        // Secondary accent colors
+        secondary: {
+          50: '#FFF5F0',
+          100: '#FFEBE0',
+          200: '#FFD1B8',
+          300: '#FFB78F',
+          400: '#FF9D66',
+          500: '#FF6B35', // Main brand color
+          600: '#E55A2B',
+          700: '#CC4A22',
+          800: '#993718',
+          900: '#66250F',
         },
         // Neutral grays
         neutral: {
@@ -75,6 +75,11 @@ module.exports = {
         },
         // Overlay
         overlay: 'rgba(0, 0, 0, 0.5)',
+        // Onboarding walkthrough colors
+        onboarding: {
+          brand: '#34C15A',
+          accent: '#E8F7EC',
+        },
         // Transparent
         transparent: 'transparent',
       },
