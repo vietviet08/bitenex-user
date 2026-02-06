@@ -1,12 +1,11 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolViewProps } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
+type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
 
 const MAPPING = {
+  // Existing SF Symbol keys
   'house.fill': 'home',
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
@@ -14,7 +13,32 @@ const MAPPING = {
   'chevron.left': 'chevron-left',
   'power': 'power',
   'cart.fill': 'shopping-cart',
-} as IconMapping;
+  // Tab bar icons
+  'home': 'home',
+  'explore': 'explore',
+  'shopping-bag': 'shopping-bag',
+  'receipt-long': 'receipt-long',
+  'person': 'person',
+  // Navigation & UI
+  'location-on': 'location-on',
+  'expand-more': 'expand-more',
+  'notifications': 'notifications',
+  'search': 'search',
+  'tune': 'tune',
+  'favorite': 'favorite',
+  'favorite-border': 'favorite-border',
+  // Delivery & commerce
+  'local-shipping': 'local-shipping',
+  'sell': 'sell',
+  'delivery-dining': 'delivery-dining',
+  // Rating
+  'star': 'star',
+  'star-rate': 'star-rate',
+  // Misc
+  'bell': 'notifications',
+} as const satisfies Record<string, MaterialIconName>;
+
+export type IconSymbolName = keyof typeof MAPPING;
 
 interface IconSymbolProps {
   readonly name: IconSymbolName;
