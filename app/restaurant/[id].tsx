@@ -1,6 +1,14 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
+import Animated, {
+    useSharedValue,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    interpolate,
+    Extrapolation,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { RestaurantHero } from "@/components/restaurant/RestaurantHero";
 import { RestaurantHeaderActions } from "@/components/restaurant/RestaurantHeaderActions";
@@ -11,6 +19,8 @@ import {
 import { MenuCategoryTabs } from "@/components/restaurant/MenuCategoryTabs";
 import { MenuItem, type MenuItemData } from "@/components/restaurant/MenuItem";
 import { FloatingCartBar } from "@/components/restaurant/FloatingCartBar";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { colors } from "@/theme";
 
 // ── Mock data ──────────────────────────────────────────────
 
@@ -81,6 +91,42 @@ const MENU_ITEMS: MenuItemData[] = [
         image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLjf5RIGDiE-9Ta39MEi2LWbtMZONUJaCKZOyoGLFSUXJgoIpO3Q8vAEens7Y50gi3XcB9JzhTlTvhZLgYIcYulyVfYQKqgtNy4CQkkoPsdnILFXV-fPNziUWyMvucz0Ot47QykAbCOM1lDrrnzKGKrYq3aUTquTPlYz1AZVsyKn5rcFC5ClsB1D7HcdHWiNVE0mzColze6peyzY4ux04UYEdR9tjfrNTHp0xXye2o65M7-BC1HevQ15l6KauqbC0UivaLMxhHJ7w",
         category: "Rice Dishes",
     },
+    {
+        id: "5",
+        name: "Khao Man Gai",
+        description:
+            "Hainanese style chicken rice served with cucumber garnish and chili sauce.",
+        price: 6.5,
+        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLjf5RIGDiE-9Ta39MEi2LWbtMZONUJaCKZOyoGLFSUXJgoIpO3Q8vAEens7Y50gi3XcB9JzhTlTvhZLgYIcYulyVfYQKqgtNy4CQkkoPsdnILFXV-fPNziUWyMvucz0Ot47QykAbCOM1lDrrnzKGKrYq3aUTquTPlYz1AZVsyKn5rcFC5ClsB1D7HcdHWiNVE0mzColze6peyzY4ux04UYEdR9tjfrNTHp0xXye2o65M7-BC1HevQ15l6KauqbC0UivaLMxhHJ7w",
+        category: "Rice Dishes",
+    },
+    {
+        id: "6",
+        name: "Khao Man Gai",
+        description:
+            "Hainanese style chicken rice served with cucumber garnish and chili sauce.",
+        price: 6.5,
+        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLjf5RIGDiE-9Ta39MEi2LWbtMZONUJaCKZOyoGLFSUXJgoIpO3Q8vAEens7Y50gi3XcB9JzhTlTvhZLgYIcYulyVfYQKqgtNy4CQkkoPsdnILFXV-fPNziUWyMvucz0Ot47QykAbCOM1lDrrnzKGKrYq3aUTquTPlYz1AZVsyKn5rcFC5ClsB1D7HcdHWiNVE0mzColze6peyzY4ux04UYEdR9tjfrNTHp0xXye2o65M7-BC1HevQ15l6KauqbC0UivaLMxhHJ7w",
+        category: "Rice Dishes",
+    },
+    {
+        id: "7",
+        name: "Khao Man Gai",
+        description:
+            "Hainanese style chicken rice served with cucumber garnish and chili sauce.",
+        price: 6.5,
+        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLjf5RIGDiE-9Ta39MEi2LWbtMZONUJaCKZOyoGLFSUXJgoIpO3Q8vAEens7Y50gi3XcB9JzhTlTvhZLgYIcYulyVfYQKqgtNy4CQkkoPsdnILFXV-fPNziUWyMvucz0Ot47QykAbCOM1lDrrnzKGKrYq3aUTquTPlYz1AZVsyKn5rcFC5ClsB1D7HcdHWiNVE0mzColze6peyzY4ux04UYEdR9tjfrNTHp0xXye2o65M7-BC1HevQ15l6KauqbC0UivaLMxhHJ7w",
+        category: "Rice Dishes",
+    },
+    {
+        id: "8",
+        name: "Khao Man Gai",
+        description:
+            "Hainanese style chicken rice served with cucumber garnish and chili sauce.",
+        price: 6.5,
+        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLjf5RIGDiE-9Ta39MEi2LWbtMZONUJaCKZOyoGLFSUXJgoIpO3Q8vAEens7Y50gi3XcB9JzhTlTvhZLgYIcYulyVfYQKqgtNy4CQkkoPsdnILFXV-fPNziUWyMvucz0Ot47QykAbCOM1lDrrnzKGKrYq3aUTquTPlYz1AZVsyKn5rcFC5ClsB1D7HcdHWiNVE0mzColze6peyzY4ux04UYEdR9tjfrNTHp0xXye2o65M7-BC1HevQ15l6KauqbC0UivaLMxhHJ7w",
+        category: "Rice Dishes",
+    },
 ];
 
 // ── Section helpers ────────────────────────────────────────
@@ -121,57 +167,129 @@ function groupByCategory(items: MenuItemData[]) {
     return groups;
 }
 
+// ── Layout constants ───────────────────────────────────────
+
+const HERO_HEIGHT = 320;
+
 // ── Screen ─────────────────────────────────────────────────
 
 export default function RestaurantDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const [activeTab, setActiveTab] = useState(0);
+    const insets = useSafeAreaInsets();
 
     const sections = groupByCategory(MENU_ITEMS);
 
+    // Scroll tracking — single shared value drives all animations
+    const scrollY = useSharedValue(0);
+    const scrollHandler = useAnimatedScrollHandler({
+        onScroll: (event) => {
+            scrollY.value = event.contentOffset.y;
+        },
+    });
+
+    // Hero: parallax background — translates at half speed, fades out
+    const heroAnimatedStyle = useAnimatedStyle(() => {
+        const translateY = interpolate(
+            scrollY.value,
+            [0, HERO_HEIGHT],
+            [0, -HERO_HEIGHT * 0.5],
+            Extrapolation.CLAMP,
+        );
+        const opacity = interpolate(
+            scrollY.value,
+            [0, HERO_HEIGHT * 0.6],
+            [1, 0],
+            Extrapolation.CLAMP,
+        );
+        return { transform: [{ translateY }], opacity };
+    });
+
+    // Compact header — appears when hero is scrolled past
+    const compactHeaderStyle = useAnimatedStyle(() => {
+        const opacity = interpolate(
+            scrollY.value,
+            [HERO_HEIGHT * 0.7, HERO_HEIGHT],
+            [0, 1],
+            Extrapolation.CLAMP,
+        );
+        const translateY = interpolate(
+            scrollY.value,
+            [HERO_HEIGHT * 0.7, HERO_HEIGHT],
+            [-8, 0],
+            Extrapolation.CLAMP,
+        );
+        return { opacity, transform: [{ translateY }] };
+    });
+
     return (
         <View className="flex-1 bg-white">
-            {/* Hero + Header overlay */}
-            <RestaurantHero imageUrl={RESTAURANT.heroImage} />
-            <RestaurantHeaderActions />
-
-            {/* Content sheet */}
-            <ScrollView
-                className="flex-1 -mt-10 z-10"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 96 }}
+            {/* ─── Parallax Hero (absolute background) ─── */}
+            <Animated.View
+                style={[
+                    {
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: HERO_HEIGHT,
+                        zIndex: 0,
+                    },
+                    heroAnimatedStyle,
+                ]}
             >
-                <View
-                    className="bg-neutral-50 rounded-t-[2rem] pt-8 px-5 min-h-screen"
-                    style={{
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: -4 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 20,
-                        elevation: 10,
-                    }}
-                >
-                    <RestaurantInfo
-                        name={RESTAURANT.name}
-                        rating={RESTAURANT.rating}
-                        reviewCount={RESTAURANT.reviewCount}
-                        cuisine={RESTAURANT.cuisine}
-                        priceLevel={RESTAURANT.priceLevel}
-                        deliveryTime={RESTAURANT.deliveryTime}
-                        tags={PROMO_TAGS}
-                    />
+                <RestaurantHero imageUrl={RESTAURANT.heroImage} />
+            </Animated.View>
 
-                    {/* Category tabs */}
-                    <View className="-mx-5">
-                        <MenuCategoryTabs
-                            categories={CATEGORIES}
-                            activeIndex={activeTab}
-                            onSelect={setActiveTab}
+            {/* ─── Single ScrollView — all content scrolls together ─── */}
+            <Animated.ScrollView
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 120 }}
+                stickyHeaderIndices={[1]}
+                style={{ zIndex: 1 }}
+            >
+                {/* [0] Hero spacer + Restaurant info */}
+                <View>
+                    {/* Transparent spacer — lets hero show through */}
+                    <View style={{ height: HERO_HEIGHT }} />
+
+                    {/* Restaurant info card — scrolls with content */}
+                    <View
+                        className="bg-white rounded-t-3xl pt-6 px-5"
+                        style={{
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: -3 },
+                            shadowOpacity: 0.08,
+                            shadowRadius: 12,
+                            elevation: 8,
+                        }}
+                    >
+                        <RestaurantInfo
+                            name={RESTAURANT.name}
+                            rating={RESTAURANT.rating}
+                            reviewCount={RESTAURANT.reviewCount}
+                            cuisine={RESTAURANT.cuisine}
+                            priceLevel={RESTAURANT.priceLevel}
+                            deliveryTime={RESTAURANT.deliveryTime}
+                            tags={PROMO_TAGS}
                         />
                     </View>
+                </View>
 
-                    {/* Menu sections */}
-                    <View className="mt-6 gap-8">
+                {/* [1] Sticky category tabs */}
+                <View className="bg-white" style={{ zIndex: 5 }}>
+                    <MenuCategoryTabs
+                        categories={CATEGORIES}
+                        activeIndex={activeTab}
+                        onSelect={setActiveTab}
+                    />
+                </View>
+
+                {/* [2] Menu sections */}
+                <View className="px-5 pt-6 bg-white">
+                    <View className="gap-8">
                         {sections.map((section, sectionIndex) => (
                             <View key={section.category}>
                                 <Text
@@ -195,11 +313,104 @@ export default function RestaurantDetailScreen() {
                             </View>
                         ))}
                     </View>
-
-                    {/* Spacer for floating cart bar */}
-                    <View className="h-20" />
                 </View>
-            </ScrollView>
+            </Animated.ScrollView>
+
+            {/* ─── Header actions (back, search, share) — always on top ─── */}
+            <RestaurantHeaderActions />
+
+            {/* ─── Compact header — fades in when hero scrolls away ─── */}
+            <Animated.View
+                style={[
+                    {
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 30,
+                        backgroundColor: "#fff",
+                        borderBottomWidth: 1,
+                        borderBottomColor: "#f5f5f5",
+                        paddingTop: insets.top + 4,
+                        paddingBottom: 8,
+                        paddingHorizontal: 16,
+                    },
+                    compactHeaderStyle,
+                ]}
+                pointerEvents="none"
+            >
+                <View
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingLeft: 40,
+                    }}
+                >
+                    <View style={{ flex: 1 }}>
+                        <Text
+                            className="text-sm font-bold text-neutral-900"
+                            numberOfLines={1}
+                        >
+                            {RESTAURANT.name}
+                        </Text>
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginTop: 2,
+                                gap: 6,
+                            }}
+                        >
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    gap: 2,
+                                }}
+                            >
+                                <IconSymbol
+                                    name="star"
+                                    size={12}
+                                    color={colors.primary[500]}
+                                />
+                                <Text className="text-xs font-semibold text-neutral-800">
+                                    {RESTAURANT.rating}
+                                </Text>
+                            </View>
+                            <Text className="text-xs text-neutral-300">•</Text>
+                            <Text
+                                className="text-xs text-neutral-500"
+                                numberOfLines={1}
+                            >
+                                {RESTAURANT.cuisine}
+                            </Text>
+                            <Text className="text-xs text-neutral-300">•</Text>
+                            <Text className="text-xs text-neutral-500">
+                                {RESTAURANT.priceLevel}
+                            </Text>
+                        </View>
+                    </View>
+                    <View
+                        style={{
+                            backgroundColor: colors.primary[50],
+                            borderRadius: 8,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            marginLeft: 8,
+                        }}
+                    >
+                        <Text
+                            style={{
+                                fontSize: 11,
+                                fontWeight: "700",
+                                color: colors.primary[500],
+                            }}
+                        >
+                            {RESTAURANT.deliveryTime}
+                        </Text>
+                    </View>
+                </View>
+            </Animated.View>
 
             {/* Floating cart bar */}
             <FloatingCartBar itemCount={2} total={13.5} />
