@@ -53,6 +53,23 @@ const MAPPING = {
     info: "info",
     // Misc
     bell: "notifications",
+    // Profile
+    edit: "edit",
+    "person-outline": "person-outline",
+    wallet: "account-balance-wallet",
+    security: "security",
+    language: "language",
+    "help-center": "help",
+    "people-outline": "people-outline",
+    logout: "logout",
+    "shield-check": "verified-user",
+    globe: "public",
+    tag: "local-offer",
+    "map-pin": "place",
+    email: "email",
+    chat: "chat",
+    fingerprint: "fingerprint",
+
 } as const satisfies Record<string, MaterialIconName>;
 
 export type IconSymbolName = keyof typeof MAPPING;
