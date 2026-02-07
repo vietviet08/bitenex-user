@@ -42,6 +42,8 @@ const MAPPING = {
     "local-offer": "local-offer",
     eco: "eco",
     remove: "remove",
+    "expand-less": "expand-less",
+    "credit-card": "credit-card",
     // Misc
     bell: "notifications",
 } as const satisfies Record<string, MaterialIconName>;
