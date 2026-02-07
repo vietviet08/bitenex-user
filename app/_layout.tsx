@@ -36,13 +36,13 @@ function RootLayoutNav() {
     const colorScheme = useColorScheme();
     const hasBootstrapped = useRef(false);
     const rehydrationCheckRef = useRef<ReturnType<typeof setTimeout> | null>(
-        null
+        null,
     );
 
     const hasCompletedWalkthrough = useHasCompletedWalkthrough();
     const isOnboardingChecked = useOnboardingChecked();
     const checkWalkthroughStatus = useOnboardingStore(
-        (state) => state.checkWalkthroughStatus
+        (state) => state.checkWalkthroughStatus,
     );
 
     useEffect(() => {
@@ -58,7 +58,7 @@ function RootLayoutNav() {
                 } else if (!hasBootstrapped.current) {
                     rehydrationCheckRef.current = setTimeout(
                         checkAndBootstrap,
-                        10
+                        10,
                     );
                 }
             };
@@ -89,7 +89,7 @@ function RootLayoutNav() {
 
     const theme = useMemo(
         () => (colorScheme === "dark" ? DarkTheme : DefaultTheme),
-        [colorScheme]
+        [colorScheme],
     );
 
     if (!isInitialized || !isOnboardingChecked) {
@@ -140,6 +140,14 @@ function RootLayoutNav() {
                     options={{
                         headerShown: false,
                         animation: "slide_from_bottom",
+                    }}
+                />
+
+                <Stack.Screen
+                    name="restaurant/[id]"
+                    options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
                     }}
                 />
 
