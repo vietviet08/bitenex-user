@@ -31,6 +31,7 @@ const MAPPING = {
     "local-shipping": "local-shipping",
     sell: "sell",
     "delivery-dining": "delivery-dining",
+    "lunch-dining": "lunch-dining",
     // Rating
     star: "star",
     "star-rate": "star-rate",

@@ -1,19 +1,14 @@
 import "../global.css";
-import {
-    DarkTheme,
-    DefaultTheme,
-    ThemeProvider,
-} from "@react-navigation/native";
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Redirect, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/hooks/useAuth";
 import { socketClient } from "@/services";
 import { getHasRehydrated, useAuthStore } from "@/store/zustand/auth.store";
@@ -33,7 +28,6 @@ export const unstable_settings = {
 function RootLayoutNav() {
     const { isAuthenticated, isInitialized } = useAuth();
     const segments = useSegments();
-    const colorScheme = useColorScheme();
     const hasBootstrapped = useRef(false);
     const rehydrationCheckRef = useRef<ReturnType<typeof setTimeout> | null>(
         null,
@@ -87,10 +81,7 @@ function RootLayoutNav() {
         }
     }, [isInitialized, isOnboardingChecked]);
 
-    const theme = useMemo(
-        () => (colorScheme === "dark" ? DarkTheme : DefaultTheme),
-        [colorScheme],
-    );
+    const theme = DefaultTheme;
 
     if (!isInitialized || !isOnboardingChecked) {
         return (
@@ -191,7 +182,7 @@ function RootLayoutNav() {
                     }}
                 />
             </Stack>
-            <StatusBar style="auto" />
+            <StatusBar style="dark" />
         </ThemeProvider>
     );
 }
