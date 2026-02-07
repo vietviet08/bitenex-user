@@ -174,6 +174,22 @@ function RootLayoutNav() {
                         title: "Modal",
                     }}
                 />
+
+                <Stack.Screen
+                    name="restaurant/overview"
+                    options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                    }}
+                />
+
+                <Stack.Screen
+                    name="restaurant/reviews"
+                    options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                    }}
+                />
             </Stack>
             <StatusBar style="auto" />
         </ThemeProvider>

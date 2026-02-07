@@ -1,4 +1,5 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
+import { router } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { colors } from "@/theme";
 
@@ -45,23 +46,40 @@ export function RestaurantInfo({
 }: RestaurantInfoProps) {
     return (
         <View className="mb-6">
-            {/* Title + Time box */}
+            {/* Title + Time box + Info button */}
             <View className="flex-row justify-between items-start mb-2">
-                <Text className="text-3xl font-extrabold text-neutral-900 leading-tight flex-1 mr-3">
-                    {name}
-                </Text>
-                <View className="items-center justify-center bg-white p-2 rounded-xl shadow-sm border border-neutral-100">
-                    <Text className="text-xs font-bold text-neutral-400 uppercase tracking-wide">
-                        Time
+                <View className="flex-1 mr-3">
+                    <Text className="text-3xl font-extrabold text-neutral-900 leading-tight">
+                        {name}
                     </Text>
-                    <Text className="text-sm font-bold text-neutral-900">
-                        {deliveryTime}
-                    </Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                    <Pressable
+                        onPress={() => router.push("/restaurant/overview")}
+                        className="w-10 h-10 rounded-xl bg-neutral-100 items-center justify-center"
+                    >
+                        <IconSymbol
+                            name="info"
+                            size={20}
+                            color={colors.neutral[600]}
+                        />
+                    </Pressable>
+                    <View className="items-center justify-center bg-white p-2 rounded-xl shadow-sm border border-neutral-100">
+                        <Text className="text-xs font-bold text-neutral-400 uppercase tracking-wide">
+                            Time
+                        </Text>
+                        <Text className="text-sm font-bold text-neutral-900">
+                            {deliveryTime}
+                        </Text>
+                    </View>
                 </View>
             </View>
 
-            {/* Rating row */}
-            <View className="flex-row items-center flex-wrap gap-y-2 mb-4">
+            {/* Rating row - tappable to go to reviews */}
+            <Pressable
+                onPress={() => router.push("/restaurant/reviews")}
+                className="flex-row items-center flex-wrap gap-y-2 mb-4"
+            >
                 <View className="flex-row items-center gap-1 mr-4">
                     <IconSymbol
                         name="star"
@@ -71,13 +89,20 @@ export function RestaurantInfo({
                     <Text className="font-bold text-neutral-900 text-base">
                         {rating}
                     </Text>
-                    <Text className="text-neutral-400">({reviewCount})</Text>
+                    <Text className="text-primary-500 underline">
+                        ({reviewCount})
+                    </Text>
+                    <IconSymbol
+                        name="chevron-right"
+                        size={16}
+                        color={colors.primary[500]}
+                    />
                 </View>
                 <Text className="text-neutral-400 mr-4">•</Text>
                 <Text className="text-sm text-neutral-500 mr-4">{cuisine}</Text>
                 <Text className="text-neutral-400 mr-4">•</Text>
                 <Text className="text-sm text-neutral-500">{priceLevel}</Text>
-            </View>
+            </Pressable>
 
             {/* Promo tags */}
             <ScrollView

@@ -44,6 +44,12 @@ const MAPPING = {
     remove: "remove",
     "expand-less": "expand-less",
     "credit-card": "credit-card",
+    // Contact & Navigation
+    phone: "phone",
+    web: "language",
+    "chevron-right": "chevron-right",
+    directions: "directions",
+    info: "info",
     // Misc
     bell: "notifications",
 } as const satisfies Record<string, MaterialIconName>;
