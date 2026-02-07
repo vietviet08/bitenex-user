@@ -152,6 +152,14 @@ function RootLayoutNav() {
                 />
 
                 <Stack.Screen
+                    name="food/[id]"
+                    options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                    }}
+                />
+
+                <Stack.Screen
                     name="(modal)"
                     options={{
                         presentation: "modal",

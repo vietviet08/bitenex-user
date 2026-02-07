@@ -41,6 +41,7 @@ const MAPPING = {
     "arrow-forward": "arrow-forward",
     "local-offer": "local-offer",
     eco: "eco",
+    remove: "remove",
     // Misc
     bell: "notifications",
 } as const satisfies Record<string, MaterialIconName>;

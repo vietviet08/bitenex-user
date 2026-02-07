@@ -1,6 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import React, { memo } from "react";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { colors } from "@/theme";
 
@@ -18,8 +19,17 @@ interface MenuItemProps {
 }
 
 export const MenuItem = memo(function MenuItem({ item }: MenuItemProps) {
+    const handlePress = () => {
+        router.push(`/food/${item.id}`);
+    };
+
+    const handleAddPress = () => {
+        // TODO: Quick add to cart without going to detail
+        router.push(`/food/${item.id}`);
+    };
+
     return (
-        <View className="flex-row gap-4">
+        <Pressable onPress={handlePress} className="flex-row gap-4">
             {/* Info — left side */}
             <View className="flex-1 justify-between">
                 <View>
@@ -59,7 +69,10 @@ export const MenuItem = memo(function MenuItem({ item }: MenuItemProps) {
                 )}
 
                 {/* Add button */}
-                <Pressable className="absolute -bottom-2 -right-2 bg-white p-1 rounded-lg shadow-md border border-neutral-100">
+                <Pressable
+                    onPress={handleAddPress}
+                    className="absolute -bottom-2 -right-2 bg-white p-1 rounded-lg shadow-md border border-neutral-100"
+                >
                     <View
                         className="w-8 h-8 rounded-lg items-center justify-center"
                         style={{ backgroundColor: colors.primary[500] }}
@@ -68,6 +81,7 @@ export const MenuItem = memo(function MenuItem({ item }: MenuItemProps) {
                     </View>
                 </Pressable>
             </View>
-        </View>
+        </Pressable>
     );
 });
+
