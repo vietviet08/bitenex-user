@@ -10,8 +10,8 @@ export function RestaurantHeaderActions() {
 
     return (
         <View
-            className="absolute left-0 right-0 z-20 flex-row justify-between items-center px-4"
-            style={{ top: insets.top + 8 }}
+            className="absolute left-0 right-0 flex-row justify-between items-center px-4"
+            style={{ top: insets.top + 8, zIndex: 40 }}
         >
             {/* Back button */}
             <Pressable
