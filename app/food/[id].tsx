@@ -1,5 +1,5 @@
-import { View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { View, Alert } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
 import { useState, useCallback, useMemo, useRef } from "react";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
@@ -14,6 +14,7 @@ import {
     type SizeOption,
     type AddOnOption,
 } from "@/components/food-item";
+import { useCartStore } from "@/store/zustand/cart.store";
 
 // Mock food item data
 interface FoodItem {
@@ -129,23 +130,59 @@ export default function FoodItemDetailScreen() {
         setQuantity((prev) => Math.max(1, prev - 1));
     }, []);
 
+    const addItem = useCartStore((state) => state.addItem);
+
     const handleAddToCart = useCallback(() => {
-        // TODO: Implement add to cart logic
-        console.log("Adding to cart:", {
-            foodItem: foodItem.name,
-            size: selectedSizeId,
-            addOns: selectedAddOnIds,
+        const selectedSize = foodItem.sizes.find(
+            (s) => s.id === selectedSizeId,
+        );
+        const selectedAddOns = foodItem.addOns.filter((a) =>
+            selectedAddOnIds.includes(a.id),
+        );
+        const addOnsTotal = selectedAddOns.reduce(
+            (sum, addOn) => sum + addOn.price,
+            0,
+        );
+
+        addItem({
+            foodItemId: foodItem.id,
+            name: foodItem.name,
+            image: foodItem.image,
+            basePrice: foodItem.basePrice,
             quantity,
-            specialInstructions,
-            totalPrice,
+            customization: {
+                sizeId: selectedSizeId,
+                sizeName: selectedSize?.name ?? "",
+                sizePriceDelta: selectedSize?.priceDelta ?? 0,
+                addOnIds: selectedAddOnIds,
+                addOnNames: selectedAddOns.map((a) => a.name),
+                addOnsTotal,
+                specialInstructions,
+            },
         });
+
+        Alert.alert(
+            "Added to Cart 🛒",
+            `${quantity}x ${foodItem.name} added to your cart.`,
+            [
+                {
+                    text: "Continue Shopping",
+                    style: "cancel",
+                    onPress: () => router.back(),
+                },
+                {
+                    text: "View Cart",
+                    onPress: () => router.push("/(tabs)/cart"),
+                },
+            ],
+        );
     }, [
         foodItem,
         selectedSizeId,
         selectedAddOnIds,
         quantity,
         specialInstructions,
-        totalPrice,
+        addItem,
     ]);
 
     // Bottom sheet setup

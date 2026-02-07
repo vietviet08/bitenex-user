@@ -160,10 +160,10 @@ function RootLayoutNav() {
                 />
 
                 <Stack.Screen
-                    name="(modal)"
+                    name="checkout"
                     options={{
-                        presentation: "modal",
-                        animation: "slide_from_bottom",
+                        headerShown: false,
+                        animation: "slide_from_right",
                     }}
                 />
 

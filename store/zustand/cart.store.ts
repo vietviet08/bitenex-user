@@ -1,170 +1,167 @@
-/**
- * Cart Store - Zustand
- * Manages shopping cart state, items, and calculations
- */
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+export interface CartItemCustomization {
+  sizeId: string;
+  sizeName: string;
+  sizePriceDelta: number;
+  addOnIds: string[];
+  addOnNames: string[];
+  addOnsTotal: number;
+  specialInstructions: string;
+}
 
-// Cart item type
 export interface CartItem {
-  id: string;
-  menuItemId: string;
-  merchantId: string;
+  id: string; // unique cart item id
+  foodItemId: string;
   name: string;
-  price: number;
+  image: string;
+  basePrice: number;
   quantity: number;
-  imageUrl: string | null;
-  options: CartItemOption[];
-  specialInstructions: string | null;
+  customization: CartItemCustomization;
+  lineTotal: number; // (basePrice + sizePriceDelta + addOnsTotal) * quantity
 }
 
-export interface CartItemOption {
-  id: string;
-  name: string;
-  price: number;
-}
-
-// Merchant info for cart context
-export interface CartMerchant {
-  id: string;
-  name: string;
-  imageUrl: string | null;
-  deliveryFee: number;
-  minOrderAmount: number;
-}
-
-// Cart state interface
 interface CartState {
-  // State
   items: CartItem[];
-  merchant: CartMerchant | null;
-  promoCode: string | null;
+  promoCode: string;
   discount: number;
+  deliveryFee: number;
 
-  // Computed (as actions for Zustand)
+  // Computed selectors (use these via hooks below)
   getSubtotal: () => number;
-  getDeliveryFee: () => number;
   getTotal: () => number;
   getItemCount: () => number;
 
   // Actions
-  addItem: (item: Omit<CartItem, 'id'>) => void;
-  updateItemQuantity: (itemId: string, quantity: number) => void;
-  removeItem: (itemId: string) => void;
-  setMerchant: (merchant: CartMerchant) => void;
-  setPromoCode: (code: string | null, discount: number) => void;
+  addItem: (item: Omit<CartItem, "id" | "lineTotal">) => void;
+  removeItem: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, quantity: number) => void;
+  applyPromo: (code: string) => boolean;
+  clearPromo: () => void;
   clearCart: () => void;
 }
 
-// Initial state
-const initialState = {
-  items: [] as CartItem[],
-  merchant: null as CartMerchant | null,
-  promoCode: null as string | null,
-  discount: 0,
+const PROMO_CODES: Record<string, number> = {
+  SAVE10: 0.1,
+  WELCOME: 0.15,
+  BITENEX20: 0.2,
 };
 
-// Generate unique ID
-const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+const calculateLineTotal = (
+  basePrice: number,
+  customization: CartItemCustomization,
+  quantity: number
+): number => {
+  const unitPrice =
+    basePrice + customization.sizePriceDelta + customization.addOnsTotal;
+  return unitPrice * quantity;
+};
+
+const generateCartItemId = (): string => {
+  return `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      ...initialState,
+      items: [],
+      promoCode: "",
+      discount: 0,
+      deliveryFee: 2.99,
 
-      // Computed values
       getSubtotal: () => {
-        const { items } = get();
-        return items.reduce((sum, item) => {
-          const optionsTotal = item.options.reduce((acc, opt) => acc + opt.price, 0);
-          return sum + (item.price + optionsTotal) * item.quantity;
-        }, 0);
-      },
-
-      getDeliveryFee: () => {
-        const { merchant } = get();
-        return merchant?.deliveryFee ?? 0;
+        return get().items.reduce((sum, item) => sum + item.lineTotal, 0);
       },
 
       getTotal: () => {
-        const { discount } = get();
         const subtotal = get().getSubtotal();
-        const deliveryFee = get().getDeliveryFee();
-        return Math.max(0, subtotal + deliveryFee - discount);
+        const discount = get().discount;
+        const deliveryFee = get().deliveryFee;
+        return subtotal - subtotal * discount + deliveryFee;
       },
 
       getItemCount: () => {
-        const { items } = get();
-        return items.reduce((sum, item) => sum + item.quantity, 0);
+        return get().items.reduce((count, item) => count + item.quantity, 0);
       },
 
-      // Actions
-      addItem: (item) =>
-        set((state) => {
-          // Check if switching merchants
-          if (state.merchant && state.merchant.id !== item.merchantId) {
-            // Clear cart when switching merchants
-            return {
-              items: [{ ...item, id: generateId() }],
-              merchant: null, // Will be set separately
-            };
-          }
+      addItem: (itemData) => {
+        const newItem: CartItem = {
+          ...itemData,
+          id: generateCartItemId(),
+          lineTotal: calculateLineTotal(itemData.basePrice, itemData.customization, itemData.quantity),
+        };
 
-          // Check for existing item with same options
-          const existingIndex = state.items.findIndex(
-            (i) =>
-              i.menuItemId === item.menuItemId &&
-              JSON.stringify(i.options) === JSON.stringify(item.options) &&
-              i.specialInstructions === item.specialInstructions
-          );
-
-          if (existingIndex >= 0) {
-            // Update quantity
-            const newItems = [...state.items];
-            newItems[existingIndex] = {
-              ...newItems[existingIndex],
-              quantity: newItems[existingIndex].quantity + item.quantity,
-            };
-            return { items: newItems };
-          }
-
-          // Add new item
-          return { items: [...state.items, { ...item, id: generateId() }] };
-        }),
-
-      updateItemQuantity: (itemId, quantity) =>
-        set((state) => {
-          if (quantity <= 0) {
-            return { items: state.items.filter((i) => i.id !== itemId) };
-          }
-          return {
-            items: state.items.map((i) =>
-              i.id === itemId ? { ...i, quantity } : i
-            ),
-          };
-        }),
-
-      removeItem: (itemId) =>
         set((state) => ({
-          items: state.items.filter((i) => i.id !== itemId),
-        })),
+          items: [...state.items, newItem],
+        }));
+      },
 
-      setMerchant: (merchant) => set({ merchant }),
+      removeItem: (cartItemId) => {
+        set((state) => ({
+          items: state.items.filter((item) => item.id !== cartItemId),
+        }));
+      },
 
-      setPromoCode: (promoCode, discount) => set({ promoCode, discount }),
+      updateQuantity: (cartItemId, quantity) => {
+        if (quantity <= 0) {
+          get().removeItem(cartItemId);
+          return;
+        }
 
-      clearCart: () => set(initialState),
+        set((state) => ({
+          items: state.items.map((item) => {
+            if (item.id !== cartItemId) return item;
+            const updatedItem = { ...item, quantity };
+            return {
+              ...updatedItem,
+              lineTotal: calculateLineTotal(item.basePrice, item.customization, quantity),
+            };
+          }),
+        }));
+      },
+
+      applyPromo: (code) => {
+        const normalizedCode = code.toUpperCase().trim();
+        const discountRate = PROMO_CODES[normalizedCode];
+
+        if (discountRate) {
+          set({ promoCode: normalizedCode, discount: discountRate });
+          return true;
+        }
+        return false;
+      },
+
+      clearPromo: () => {
+        set({ promoCode: "", discount: 0 });
+      },
+
+      clearCart: () => {
+        set({
+          items: [],
+          promoCode: "",
+          discount: 0,
+        });
+      },
     }),
     {
-      name: 'cart-storage',
+      name: "cart-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        items: state.items,
+        promoCode: state.promoCode,
+        discount: state.discount,
+      }),
     }
   )
 );
 
 // Selector hooks
 export const useCartItems = () => useCartStore((state) => state.items);
-export const useCartMerchant = () => useCartStore((state) => state.merchant);
 export const useCartItemCount = () => useCartStore((state) => state.getItemCount());
+export const useCartSubtotal = () => useCartStore((state) => state.getSubtotal());
+export const useCartTotal = () => useCartStore((state) => state.getTotal());
+export const useCartDiscount = () => useCartStore((state) => state.discount);
+export const useCartPromoCode = () => useCartStore((state) => state.promoCode);
+export const useDeliveryFee = () => useCartStore((state) => state.deliveryFee);
