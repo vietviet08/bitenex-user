@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { View, Text, ScrollView, Pressable, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -11,6 +11,7 @@ import {
     MapTrackingView,
     Location,
 } from "@/components/tracking";
+import { DeliverySuccessModal } from "@/components/feedback";
 
 // Mock data - API ready interface
 const MOCK_DRIVER: Driver = {
@@ -54,6 +55,8 @@ const MOCK_LOCATIONS = {
     },
 };
 
+const AUTO_COMPLETE_SECONDS = 10;
+
 function calculateDistance(loc1: Location, loc2: Location): number {
     const R = 6371; // Earth's radius in km
     const dLat = ((loc2.latitude - loc1.latitude) * Math.PI) / 180;
@@ -83,6 +86,30 @@ export default function TrackingScreen() {
         MOCK_ORDER.estimatedTime,
     );
     const [isMapFullScreen, setIsMapFullScreen] = useState(false);
+    const [showDeliverySuccess, setShowDeliverySuccess] = useState(false);
+    const [countdown, setCountdown] = useState(AUTO_COMPLETE_SECONDS);
+    const [orderStatus, setOrderStatus] = useState<
+        "searching" | "accepted" | "picking_up" | "on_the_way" | "delivered"
+    >("on_the_way");
+
+    // Auto-complete timer for testing
+    useEffect(() => {
+        if (orderStatus === "delivered") return;
+
+        const timer = setInterval(() => {
+            setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    setOrderStatus("delivered");
+                    setShowDeliverySuccess(true);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [orderStatus]);
 
     const handleDriverLocationUpdate = useCallback((location: Location) => {
         setDriverLocation(location);
@@ -104,9 +131,29 @@ export default function TrackingScreen() {
         router.push("/order/driver-profile");
     };
 
+    const handleDeliveryConfirm = () => {
+        setShowDeliverySuccess(false);
+        // Small delay to let modal close before navigation
+        setTimeout(() => {
+            router.replace({
+                pathname: "/order/driver-rating",
+                params: { orderId: MOCK_ORDER.id },
+            });
+        }, 100);
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
             <ScreenHeader title="Track Order" />
+
+            {/* Countdown Timer for Testing */}
+            {orderStatus !== "delivered" && (
+                <View className="bg-yellow-100 mx-4 mb-2 px-4 py-2 rounded-xl">
+                    <Text className="text-yellow-800 text-center font-medium">
+                        🧪 Test Mode: Auto-complete in {countdown}s
+                    </Text>
+                </View>
+            )}
 
             {/* Map outside ScrollView to avoid touch conflicts */}
             <View className="relative">
@@ -137,7 +184,9 @@ export default function TrackingScreen() {
                     </View>
                     <View className="bg-white/20 px-4 py-2 rounded-lg">
                         <Text className="text-white font-semibold">
-                            On the way
+                            {orderStatus === "delivered"
+                                ? "Delivered"
+                                : "On the way"}
                         </Text>
                     </View>
                 </View>
@@ -196,6 +245,19 @@ export default function TrackingScreen() {
                     </View>
                 </View>
             </ScrollView>
+
+            {/* Delivery Success Modal */}
+            <DeliverySuccessModal
+                visible={showDeliverySuccess}
+                onConfirm={handleDeliveryConfirm}
+                orderInfo={{
+                    orderId: MOCK_ORDER.id,
+                    deliveryTime: new Date().toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    }),
+                }}
+            />
 
             {/* Fullscreen Map Modal */}
             <Modal

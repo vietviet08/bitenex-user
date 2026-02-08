@@ -29,7 +29,10 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
     };
 
     const handleTrackDriver = () => {
-        // Future: Navigate to tracking screen
+        router.push({
+            pathname: "/order/tracking",
+            params: { orderId: order.id },
+        });
     };
 
     const handleLeaveReview = () => {
