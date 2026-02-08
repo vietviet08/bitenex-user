@@ -64,23 +64,15 @@ export default function CheckoutScreen() {
     const handlePlaceOrder = useCallback(async () => {
         setIsPlacingOrder(true);
 
-        // Simulate API call
+        // Simulate API call to create order
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        // Clear cart and navigate to confirmation
+        // Clear cart
         clearCart();
         setIsPlacingOrder(false);
 
-        Alert.alert(
-            "Order Placed! 🎉",
-            "Your order has been placed successfully. You will receive a confirmation shortly.",
-            [
-                {
-                    text: "OK",
-                    onPress: () => router.replace("/(tabs)"),
-                },
-            ],
-        );
+        // Navigate to search driver screen
+        router.push("/order/search-driver");
     }, [clearCart]);
 
     return (

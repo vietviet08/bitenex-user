@@ -32,6 +32,8 @@ const MAPPING = {
     sell: "sell",
     "delivery-dining": "delivery-dining",
     "lunch-dining": "lunch-dining",
+    restaurant: "restaurant",
+    motorcycle: "two-wheeler",
     // Rating
     star: "star",
     "star-rate": "star-rate",
@@ -44,6 +46,8 @@ const MAPPING = {
     eco: "eco",
     remove: "remove",
     "expand-less": "expand-less",
+    fullscreen: "fullscreen",
+    "fullscreen-exit": "fullscreen-exit",
     "credit-card": "credit-card",
     // Contact & Navigation
     phone: "phone",
@@ -69,7 +73,10 @@ const MAPPING = {
     email: "email",
     chat: "chat",
     fingerprint: "fingerprint",
-
+    // Tracking & calls
+    send: "send",
+    "volume-up": "volume-up",
+    "music-off": "music-off",
 } as const satisfies Record<string, MaterialIconName>;
 
 export type IconSymbolName = keyof typeof MAPPING;
