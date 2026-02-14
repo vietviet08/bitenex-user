@@ -1,6 +1,8 @@
-import { View, Text, Pressable } from "react-native";
 import React, { memo } from "react";
+import { Pressable, Text, View } from "react-native";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { colors } from "@/theme";
 
@@ -26,46 +28,42 @@ export const RestaurantCard = memo(function RestaurantCard({
 
     return (
         <Pressable
-            className="border border-neutral-200 rounded-2xl bg-white p-3 shadow-sm"
+            className="rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm"
             onPress={() => router.push(`/restaurant/${restaurant.id}` as any)}
         >
-            {/* Image area */}
-            <View
-                className="w-full rounded-xl bg-neutral-100 items-center justify-center overflow-hidden relative"
-                style={{ aspectRatio: 2 }}
-            >
-                <Text className="text-5xl">🍽️</Text>
+            <View className="relative w-full items-center justify-center overflow-hidden rounded-xl bg-neutral-100">
+                <View style={{ aspectRatio: 2, width: "100%" }}>
+                    {restaurant.image ? (
+                        <Image
+                            source={{ uri: restaurant.image }}
+                            style={{ width: "100%", height: "100%" }}
+                            contentFit="cover"
+                        />
+                    ) : (
+                        <View className="h-full w-full items-center justify-center">
+                            <Text className="text-5xl">🍽️</Text>
+                        </View>
+                    )}
+                </View>
 
-                {/* Time badge — top left */}
-                <View className="absolute top-2 left-2 bg-white/90 px-2.5 py-1 rounded-full">
+                <View className="absolute left-2 top-2 rounded-full bg-white/90 px-2.5 py-1">
                     <Text className="text-xs font-semibold text-neutral-800">
                         {restaurant.deliveryTime}
                     </Text>
                 </View>
 
-                {/* Favorite heart — top right */}
-                <Pressable className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full items-center justify-center">
+                <Pressable className="absolute right-2 top-2 h-8 w-8 items-center justify-center rounded-full bg-white/90">
                     <IconSymbol
-                        name={
-                            restaurant.isFavorite
-                                ? "favorite"
-                                : "favorite-border"
-                        }
+                        name={restaurant.isFavorite ? "favorite" : "favorite-border"}
                         size={18}
-                        color={
-                            restaurant.isFavorite
-                                ? colors.error
-                                : colors.neutral[500]
-                        }
+                        color={restaurant.isFavorite ? colors.error : colors.neutral[500]}
                     />
                 </Pressable>
             </View>
 
-            {/* Info section */}
             <View className="mt-3">
-                {/* Name row */}
                 <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center flex-1 mr-2">
+                    <View className="mr-2 flex-1 flex-row items-center">
                         <Text
                             className="text-base font-bold text-neutral-900"
                             numberOfLines={1}
@@ -73,73 +71,49 @@ export const RestaurantCard = memo(function RestaurantCard({
                             {restaurant.name}
                         </Text>
                         <View
-                            className="w-1.5 h-1.5 rounded-full mx-1.5"
+                            className="mx-1.5 h-1.5 w-1.5 rounded-full"
                             style={{ backgroundColor: colors.primary[500] }}
                         />
                     </View>
 
-                    {/* Rating pill */}
                     <View
-                        className={`flex-row items-center px-2 py-0.5 rounded-full ${
+                        className={`flex-row items-center rounded-full px-2 py-0.5 ${
                             isHighRated ? "bg-green-50" : "bg-neutral-100"
                         }`}
                     >
                         <IconSymbol
                             name="star-rate"
                             size={12}
-                            color={
-                                isHighRated ? "#16A34A" : colors.neutral[600]
-                            }
+                            color={isHighRated ? "#16A34A" : colors.neutral[600]}
                         />
                         <Text
-                            className={`text-xs font-bold ml-0.5 ${
-                                isHighRated
-                                    ? "text-green-700"
-                                    : "text-neutral-700"
+                            className={`ml-0.5 text-xs font-bold ${
+                                isHighRated ? "text-green-700" : "text-neutral-700"
                             }`}
                         >
-                            {restaurant.rating}
+                            {restaurant.rating.toFixed(1)}
                         </Text>
                     </View>
                 </View>
 
-                {/* Cuisine tags */}
-                <Text
-                    className="text-sm text-neutral-500 mt-0.5"
-                    numberOfLines={1}
-                >
+                <Text className="mt-0.5 text-sm text-neutral-500" numberOfLines={1}>
                     {restaurant.cuisine.join(" • ")}
                 </Text>
             </View>
 
-            {/* Footer */}
-            <View className="flex-row items-center mt-3 pt-3 border-t border-neutral-100">
-                <IconSymbol
-                    name="delivery-dining"
-                    size={14}
-                    color={colors.neutral[500]}
-                />
-                <Text className="text-xs text-neutral-500 ml-1">
-                    {restaurant.deliveryFee} delivery
-                </Text>
+            <View className="mt-3 flex-row items-center border-t border-neutral-100 pt-3">
+                <IconSymbol name="delivery-dining" size={14} color={colors.neutral[500]} />
+                <Text className="ml-1 text-xs text-neutral-500">{restaurant.deliveryFee} delivery</Text>
 
-                {restaurant.promoText != null &&
-                    restaurant.promoText !== "" && (
-                        <>
-                            <View className="w-1 h-1 bg-neutral-300 rounded-full mx-2" />
-                            <IconSymbol
-                                name="sell"
-                                size={14}
-                                color={colors.primary[500]}
-                            />
-                            <Text
-                                className="text-xs font-medium ml-1"
-                                style={{ color: colors.primary[500] }}
-                            >
-                                {restaurant.promoText}
-                            </Text>
-                        </>
-                    )}
+                {restaurant.promoText ? (
+                    <>
+                        <View className="mx-2 h-1 w-1 rounded-full bg-neutral-300" />
+                        <IconSymbol name="sell" size={14} color={colors.primary[500]} />
+                        <Text className="ml-1 text-xs font-medium text-primary-500">
+                            {restaurant.promoText}
+                        </Text>
+                    </>
+                ) : null}
             </View>
         </Pressable>
     );
