@@ -7,6 +7,7 @@ import { colors } from "@/theme";
 
 export type MenuItemData = {
     id: string;
+    merchantId: string;
     name: string;
     description: string;
     price: number;
@@ -20,12 +21,17 @@ interface MenuItemProps {
 
 export const MenuItem = memo(function MenuItem({ item }: MenuItemProps) {
     const handlePress = () => {
-        router.push(`/food/${item.id}`);
+        router.push({
+            pathname: "/food/[id]",
+            params: { id: item.id, merchantId: item.merchantId },
+        });
     };
 
     const handleAddPress = () => {
-        // TODO: Quick add to cart without going to detail
-        router.push(`/food/${item.id}`);
+        router.push({
+            pathname: "/food/[id]",
+            params: { id: item.id, merchantId: item.merchantId },
+        });
     };
 
     return (

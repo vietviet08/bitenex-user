@@ -21,9 +21,10 @@ type MenuSection = {
     items: MenuItemData[];
 };
 
-function toMenuItem(item: MenuItemDto): MenuItemData {
+function toMenuItem(item: MenuItemDto, merchantId: string): MenuItemData {
     return {
         id: item.id,
+        merchantId,
         name: item.name,
         description: item.description || "No description",
         price: item.price,
@@ -74,7 +75,7 @@ export default function RestaurantDetailScreen() {
                 fetchMerchantMenu(merchantId, { available_only: true }),
             ]);
             setMerchant(merchantResponse);
-            setMenuItems(menuResponse.map((item) => toMenuItem(item)));
+            setMenuItems(menuResponse.map((item) => toMenuItem(item, merchantId)));
         } catch (error) {
             setErrorMessage(error instanceof Error ? error.message : "Failed to load merchant");
         } finally {

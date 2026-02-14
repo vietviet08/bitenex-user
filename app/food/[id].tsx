@@ -1,6 +1,6 @@
-import { View, Alert } from "react-native";
+import { View, Text, Alert, ActivityIndicator, Pressable } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import {
@@ -15,112 +15,125 @@ import {
     type AddOnOption,
 } from "@/components/food-item";
 import { useCartStore } from "@/store/zustand/cart.store";
-
-// Mock food item data
-interface FoodItem {
-    id: string;
-    name: string;
-    description: string;
-    image: string;
-    basePrice: number;
-    sizes: SizeOption[];
-    addOns: AddOnOption[];
-}
-
-const MOCK_FOOD_ITEMS: Record<string, FoodItem> = {
-    "1": {
-        id: "1",
-        name: "Classic Beef Burger",
-        description:
-            "Juicy beef patty with fresh lettuce, tomatoes, pickles, and our signature sauce on a toasted brioche bun.",
-        image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800",
-        basePrice: 12.99,
-        sizes: [
-            { id: "small", name: "Small", priceDelta: 0 },
-            { id: "medium", name: "Medium", priceDelta: 2.0 },
-            { id: "large", name: "Large", priceDelta: 4.0 },
-        ],
-        addOns: [
-            { id: "cheese", name: "Extra Cheese", price: 1.5 },
-            { id: "bacon", name: "Crispy Bacon", price: 2.0 },
-            { id: "avocado", name: "Fresh Avocado", price: 2.5 },
-            { id: "egg", name: "Fried Egg", price: 1.5 },
-        ],
-    },
-    "2": {
-        id: "2",
-        name: "Margherita Pizza",
-        description:
-            "Traditional Italian pizza with San Marzano tomatoes, fresh mozzarella, basil, and extra virgin olive oil.",
-        image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800",
-        basePrice: 14.99,
-        sizes: [
-            { id: "personal", name: 'Personal (8")', priceDelta: 0 },
-            { id: "medium", name: 'Medium (12")', priceDelta: 4.0 },
-            { id: "large", name: 'Large (16")', priceDelta: 8.0 },
-        ],
-        addOns: [
-            { id: "pepperoni", name: "Pepperoni", price: 2.0 },
-            { id: "mushrooms", name: "Mushrooms", price: 1.5 },
-            { id: "olives", name: "Black Olives", price: 1.0 },
-            { id: "jalapeños", name: "Jalapeños", price: 0.75 },
-        ],
-    },
-};
-
-// Default fallback for unknown IDs
-const DEFAULT_FOOD_ITEM: FoodItem = {
-    id: "0",
-    name: "Delicious Food Item",
-    description: "A tasty food item prepared with fresh ingredients.",
-    image: "",
-    basePrice: 9.99,
-    sizes: [
-        { id: "regular", name: "Regular", priceDelta: 0 },
-        { id: "large", name: "Large", priceDelta: 3.0 },
-    ],
-    addOns: [{ id: "extra", name: "Extra Portion", price: 3.0 }],
-};
+import {
+    fetchMenuItemDetail,
+    type MenuItemDetailDto,
+    type OptionGroupDto,
+} from "@/services/merchant";
 
 export default function FoodItemDetailScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>();
-    const foodItem = MOCK_FOOD_ITEMS[id ?? ""] ?? DEFAULT_FOOD_ITEM;
+    const { id, merchantId } = useLocalSearchParams<{
+        id: string;
+        merchantId: string;
+    }>();
 
-    // State
-    const [selectedSizeId, setSelectedSizeId] = useState(
-        foodItem.sizes[0]?.id ?? "",
-    );
-    const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
+    // Data fetching state
+    const [menuItem, setMenuItem] = useState<MenuItemDetailDto | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState("");
+
+    // Selection state — keyed by option group id
+    const [selectedOptions, setSelectedOptions] = useState<
+        Record<string, string[]>
+    >({});
     const [quantity, setQuantity] = useState(1);
     const [specialInstructions, setSpecialInstructions] = useState("");
 
-    // Calculate total price
+    // ── Fetch data ───────────────────────────────────────────────────
+
+    const load = useCallback(async () => {
+        if (!id || !merchantId) {
+            setErrorMessage("Missing item or merchant ID");
+            setIsLoading(false);
+            return;
+        }
+        setIsLoading(true);
+        setErrorMessage("");
+        try {
+            const data = await fetchMenuItemDetail(merchantId, id);
+            setMenuItem(data);
+
+            // Initialize selections: for "single" groups, pre-select first option
+            const initial: Record<string, string[]> = {};
+            for (const group of data.option_groups) {
+                if (
+                    group.selection_type === "single" &&
+                    group.options.length > 0
+                ) {
+                    initial[group.id] = [group.options[0].id];
+                } else {
+                    initial[group.id] = [];
+                }
+            }
+            setSelectedOptions(initial);
+        } catch (error) {
+            setErrorMessage(
+                error instanceof Error ? error.message : "Failed to load item",
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    }, [id, merchantId]);
+
+    useEffect(() => {
+        load();
+    }, [load]);
+
+    // ── Derived data for existing components ─────────────────────────
+
+    // Convert option groups into SizeOption[] / AddOnOption[] compatible shapes
+    const singleGroups = useMemo(
+        () =>
+            (menuItem?.option_groups ?? []).filter(
+                (g) => g.selection_type === "single",
+            ),
+        [menuItem],
+    );
+
+    const multipleGroups = useMemo(
+        () =>
+            (menuItem?.option_groups ?? []).filter(
+                (g) => g.selection_type === "multiple",
+            ),
+        [menuItem],
+    );
+
+    // ── Price calculation ────────────────────────────────────────────
+
     const totalPrice = useMemo(() => {
-        const selectedSize = foodItem.sizes.find(
-            (s) => s.id === selectedSizeId,
-        );
-        const sizeDelta = selectedSize?.priceDelta ?? 0;
+        if (!menuItem) return 0;
+        let optionsDelta = 0;
+        for (const group of menuItem.option_groups) {
+            const selected = selectedOptions[group.id] ?? [];
+            for (const optId of selected) {
+                const opt = group.options.find((o) => o.id === optId);
+                if (opt) optionsDelta += opt.price_delta;
+            }
+        }
+        return (menuItem.price + optionsDelta) * quantity;
+    }, [menuItem, selectedOptions, quantity]);
 
-        const addOnsTotal = selectedAddOnIds.reduce((sum, addOnId) => {
-            const addOn = foodItem.addOns.find((a) => a.id === addOnId);
-            return sum + (addOn?.price ?? 0);
-        }, 0);
+    // ── Handlers ─────────────────────────────────────────────────────
 
-        return (foodItem.basePrice + sizeDelta + addOnsTotal) * quantity;
-    }, [foodItem, selectedSizeId, selectedAddOnIds, quantity]);
+    const handleSelectSingleOption = useCallback(
+        (groupId: string, optionId: string) => {
+            setSelectedOptions((prev) => ({ ...prev, [groupId]: [optionId] }));
+        },
+        [],
+    );
 
-    // Handlers
-    const handleSelectSize = useCallback((sizeId: string) => {
-        setSelectedSizeId(sizeId);
-    }, []);
-
-    const handleToggleAddOn = useCallback((addOnId: string) => {
-        setSelectedAddOnIds((prev) =>
-            prev.includes(addOnId)
-                ? prev.filter((id) => id !== addOnId)
-                : [...prev, addOnId],
-        );
-    }, []);
+    const handleToggleMultipleOption = useCallback(
+        (groupId: string, optionId: string) => {
+            setSelectedOptions((prev) => {
+                const current = prev[groupId] ?? [];
+                const next = current.includes(optionId)
+                    ? current.filter((id) => id !== optionId)
+                    : [...current, optionId];
+                return { ...prev, [groupId]: next };
+            });
+        },
+        [],
+    );
 
     const handleIncrement = useCallback(() => {
         setQuantity((prev) => prev + 1);
@@ -131,68 +144,185 @@ export default function FoodItemDetailScreen() {
     }, []);
 
     const addItem = useCartStore((state) => state.addItem);
+    const hasMerchantConflict = useCartStore((state) => state.hasMerchantConflict);
+    const switchMerchantAndAdd = useCartStore((state) => state.switchMerchantAndAdd);
 
-    const handleAddToCart = useCallback(() => {
-        const selectedSize = foodItem.sizes.find(
-            (s) => s.id === selectedSizeId,
-        );
-        const selectedAddOns = foodItem.addOns.filter((a) =>
-            selectedAddOnIds.includes(a.id),
-        );
-        const addOnsTotal = selectedAddOns.reduce(
-            (sum, addOn) => sum + addOn.price,
-            0,
+    const buildCartItemData = useCallback(() => {
+        if (!menuItem || !merchantId) return null;
+
+        const firstSingleGroup = singleGroups[0];
+        const selectedSizeOptId = firstSingleGroup
+            ? (selectedOptions[firstSingleGroup.id]?.[0] ?? "")
+            : "";
+        const selectedSizeOpt = firstSingleGroup?.options.find(
+            (o) => o.id === selectedSizeOptId,
         );
 
-        addItem({
-            foodItemId: foodItem.id,
-            name: foodItem.name,
-            image: foodItem.image,
-            basePrice: foodItem.basePrice,
+        const allAddOnIds: string[] = [];
+        const allAddOnNames: string[] = [];
+        let addOnsTotal = 0;
+        for (const group of multipleGroups) {
+            const selected = selectedOptions[group.id] ?? [];
+            for (const optId of selected) {
+                const opt = group.options.find((o) => o.id === optId);
+                if (opt) {
+                    allAddOnIds.push(opt.id);
+                    allAddOnNames.push(opt.name);
+                    addOnsTotal += opt.price_delta;
+                }
+            }
+        }
+
+        let extraSingleDelta = 0;
+        for (let i = 1; i < singleGroups.length; i++) {
+            const group = singleGroups[i];
+            const sel = selectedOptions[group.id]?.[0];
+            if (sel) {
+                const opt = group.options.find((o) => o.id === sel);
+                if (opt) {
+                    allAddOnIds.push(opt.id);
+                    allAddOnNames.push(opt.name);
+                    extraSingleDelta += opt.price_delta;
+                }
+            }
+        }
+
+        return {
+            foodItemId: menuItem.id,
+            merchantId,
+            name: menuItem.name,
+            image: menuItem.image_url ?? "",
+            basePrice: menuItem.price,
             quantity,
             customization: {
-                sizeId: selectedSizeId,
-                sizeName: selectedSize?.name ?? "",
-                sizePriceDelta: selectedSize?.priceDelta ?? 0,
-                addOnIds: selectedAddOnIds,
-                addOnNames: selectedAddOns.map((a) => a.name),
-                addOnsTotal,
+                sizeId: selectedSizeOptId,
+                sizeName: selectedSizeOpt?.name ?? "",
+                sizePriceDelta: selectedSizeOpt?.price_delta ?? 0,
+                addOnIds: allAddOnIds,
+                addOnNames: allAddOnNames,
+                addOnsTotal: addOnsTotal + extraSingleDelta,
                 specialInstructions,
             },
-        });
-
-        Alert.alert(
-            "Added to Cart 🛒",
-            `${quantity}x ${foodItem.name} added to your cart.`,
-            [
-                {
-                    text: "Continue Shopping",
-                    style: "cancel",
-                    onPress: () => router.back(),
-                },
-                {
-                    text: "View Cart",
-                    onPress: () => router.push("/(tabs)/cart"),
-                },
-            ],
-        );
+            selectedOptions: Object.entries(selectedOptions)
+                .filter(([, ids]) => ids.length > 0)
+                .flatMap(([groupId, optionIds]) =>
+                    optionIds.map((optionId) => ({
+                        option_group_id: groupId,
+                        option_id: optionId,
+                    })),
+                ),
+        };
     }, [
-        foodItem,
-        selectedSizeId,
-        selectedAddOnIds,
+        menuItem,
+        merchantId,
+        selectedOptions,
+        singleGroups,
+        multipleGroups,
         quantity,
         specialInstructions,
+    ]);
+
+    const showAddedAlert = useCallback(
+        (itemName: string, qty: number) => {
+            Alert.alert(
+                "Added to Cart 🛒",
+                `${qty}x ${itemName} added to your cart.`,
+                [
+                    {
+                        text: "Continue Shopping",
+                        style: "cancel",
+                        onPress: () => router.back(),
+                    },
+                    {
+                        text: "View Cart",
+                        onPress: () => router.push("/(tabs)/cart"),
+                    },
+                ],
+            );
+        },
+        [],
+    );
+
+    const handleAddToCart = useCallback(() => {
+        const itemData = buildCartItemData();
+        if (!itemData) return;
+
+        if (hasMerchantConflict(itemData.merchantId)) {
+            Alert.alert(
+                "Different Restaurant",
+                "Your cart has items from another restaurant. Clear the cart and add this item?",
+                [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Clear & Add",
+                        style: "destructive",
+                        onPress: () => {
+                            switchMerchantAndAdd(itemData);
+                            showAddedAlert(itemData.name, itemData.quantity);
+                        },
+                    },
+                ],
+            );
+            return;
+        }
+
+        addItem(itemData);
+        showAddedAlert(itemData.name, itemData.quantity);
+    }, [
+        buildCartItemData,
+        hasMerchantConflict,
+        switchMerchantAndAdd,
         addItem,
+        showAddedAlert,
     ]);
 
     // Bottom sheet setup
     const bottomSheetRef = useRef<BottomSheet>(null);
     const snapPoints = useMemo(() => ["70%", "90%"], []);
 
+    // ── Loading / Error states ───────────────────────────────────────
+
+    if (isLoading) {
+        return (
+            <View className="flex-1 bg-white items-center justify-center">
+                <ActivityIndicator size="large" color="#3B82F6" />
+                <Text className="mt-3 text-sm text-neutral-500">
+                    Loading item details...
+                </Text>
+            </View>
+        );
+    }
+
+    if (errorMessage || !menuItem) {
+        return (
+            <View className="flex-1 bg-white items-center justify-center px-6">
+                <Text className="text-6xl mb-4">😕</Text>
+                <Text className="text-lg font-semibold text-neutral-900 text-center">
+                    {errorMessage || "Item not found"}
+                </Text>
+                <Pressable
+                    onPress={load}
+                    className="mt-4 rounded-xl bg-primary-500 px-6 py-3"
+                >
+                    <Text className="text-sm font-semibold text-white">Retry</Text>
+                </Pressable>
+                <Pressable onPress={() => router.back()} className="mt-3">
+                    <Text className="text-sm font-semibold text-primary-500">
+                        Go back
+                    </Text>
+                </Pressable>
+            </View>
+        );
+    }
+
+    // ── Render ───────────────────────────────────────────────────────
+
+    const hasOptionGroups = menuItem.option_groups.length > 0;
+
     return (
         <View className="flex-1 bg-white">
             {/* Hero Image with Header Actions */}
-            <FoodItemHero imageUrl={foodItem.image} />
+            <FoodItemHero imageUrl={menuItem.image_url ?? undefined} />
             <FoodItemHeaderActions />
 
             {/* Modal Bottom Sheet */}
@@ -217,26 +347,72 @@ export default function FoodItemDetailScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <FoodItemInfo
-                        name={foodItem.name}
-                        description={foodItem.description}
-                        price={foodItem.basePrice}
+                        name={menuItem.name}
+                        description={menuItem.description ?? ""}
+                        price={menuItem.price}
                     />
 
-                    <View className="h-2 bg-neutral-100" />
+                    {hasOptionGroups ? (
+                        <>
+                            {/* Render each single-select group as radio selectors */}
+                            {singleGroups.map((group) => {
+                                const sizes: SizeOption[] = group.options.map(
+                                    (opt) => ({
+                                        id: opt.id,
+                                        name: opt.name,
+                                        priceDelta: opt.price_delta,
+                                    }),
+                                );
+                                return (
+                                    <View key={group.id}>
+                                        <View className="h-2 bg-neutral-100" />
+                                        <SizeSelector
+                                            sizes={sizes}
+                                            selectedSizeId={
+                                                selectedOptions[group.id]?.[0] ?? ""
+                                            }
+                                            onSelectSize={(optId) =>
+                                                handleSelectSingleOption(
+                                                    group.id,
+                                                    optId,
+                                                )
+                                            }
+                                            label={group.name}
+                                        />
+                                    </View>
+                                );
+                            })}
 
-                    <SizeSelector
-                        sizes={foodItem.sizes}
-                        selectedSizeId={selectedSizeId}
-                        onSelectSize={handleSelectSize}
-                    />
-
-                    <View className="h-2 bg-neutral-100" />
-
-                    <CustomizeSection
-                        addOns={foodItem.addOns}
-                        selectedAddOnIds={selectedAddOnIds}
-                        onToggleAddOn={handleToggleAddOn}
-                    />
+                            {/* Render each multi-select group as checkbox selectors */}
+                            {multipleGroups.map((group) => {
+                                const addOns: AddOnOption[] = group.options.map(
+                                    (opt) => ({
+                                        id: opt.id,
+                                        name: opt.name,
+                                        price: opt.price_delta,
+                                    }),
+                                );
+                                return (
+                                    <View key={group.id}>
+                                        <View className="h-2 bg-neutral-100" />
+                                        <CustomizeSection
+                                            addOns={addOns}
+                                            selectedAddOnIds={
+                                                selectedOptions[group.id] ?? []
+                                            }
+                                            onToggleAddOn={(optId) =>
+                                                handleToggleMultipleOption(
+                                                    group.id,
+                                                    optId,
+                                                )
+                                            }
+                                            label={group.name}
+                                        />
+                                    </View>
+                                );
+                            })}
+                        </>
+                    ) : null}
 
                     <View className="h-2 bg-neutral-100" />
 

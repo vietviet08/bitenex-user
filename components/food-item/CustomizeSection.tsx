@@ -11,17 +11,19 @@ interface CustomizeSectionProps {
     readonly addOns: AddOnOption[];
     readonly selectedAddOnIds: string[];
     readonly onToggleAddOn: (addOnId: string) => void;
+    readonly label?: string;
 }
 
 export const CustomizeSection = memo(function CustomizeSection({
     addOns,
     selectedAddOnIds,
     onToggleAddOn,
+    label,
 }: CustomizeSectionProps) {
     return (
         <View className="px-4 py-4">
             <Text className="text-lg font-bold text-neutral-900 mb-3">
-                Customize your order
+                {label ?? "Customize your order"}
             </Text>
             <View className="gap-2">
                 {addOns.map((addOn) => {
