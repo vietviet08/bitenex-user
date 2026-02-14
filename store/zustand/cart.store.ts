@@ -12,19 +12,27 @@ export interface CartItemCustomization {
   specialInstructions: string;
 }
 
+export interface SelectedOptionRef {
+  option_group_id: string;
+  option_id: string;
+}
+
 export interface CartItem {
   id: string; // unique cart item id
   foodItemId: string;
+  merchantId: string;
   name: string;
   image: string;
   basePrice: number;
   quantity: number;
   customization: CartItemCustomization;
+  selectedOptions: SelectedOptionRef[];
   lineTotal: number; // (basePrice + sizePriceDelta + addOnsTotal) * quantity
 }
 
 interface CartState {
   items: CartItem[];
+  merchantId: string | null; // tracks current cart merchant
   promoCode: string;
   discount: number;
   deliveryFee: number;
@@ -36,6 +44,9 @@ interface CartState {
 
   // Actions
   addItem: (item: Omit<CartItem, "id" | "lineTotal">) => void;
+  /** Returns true if the cart already has items from a different merchant */
+  hasMerchantConflict: (merchantId: string) => boolean;
+  switchMerchantAndAdd: (item: Omit<CartItem, "id" | "lineTotal">) => void;
   removeItem: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   applyPromo: (code: string) => boolean;
@@ -67,6 +78,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      merchantId: null,
       promoCode: "",
       discount: 0,
       deliveryFee: 2.99,
@@ -95,7 +107,28 @@ export const useCartStore = create<CartState>()(
 
         set((state) => ({
           items: [...state.items, newItem],
+          merchantId: itemData.merchantId,
         }));
+      },
+
+      hasMerchantConflict: (merchantId) => {
+        const state = get();
+        return state.items.length > 0 && state.merchantId !== null && state.merchantId !== merchantId;
+      },
+
+      switchMerchantAndAdd: (itemData) => {
+        const newItem: CartItem = {
+          ...itemData,
+          id: generateCartItemId(),
+          lineTotal: calculateLineTotal(itemData.basePrice, itemData.customization, itemData.quantity),
+        };
+
+        set({
+          items: [newItem],
+          merchantId: itemData.merchantId,
+          promoCode: "",
+          discount: 0,
+        });
       },
 
       removeItem: (cartItemId) => {
@@ -140,6 +173,7 @@ export const useCartStore = create<CartState>()(
       clearCart: () => {
         set({
           items: [],
+          merchantId: null,
           promoCode: "",
           discount: 0,
         });
@@ -150,6 +184,7 @@ export const useCartStore = create<CartState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         items: state.items,
+        merchantId: state.merchantId,
         promoCode: state.promoCode,
         discount: state.discount,
       }),

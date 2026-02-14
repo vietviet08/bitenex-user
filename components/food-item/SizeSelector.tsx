@@ -12,17 +12,19 @@ interface SizeSelectorProps {
     readonly sizes: SizeOption[];
     readonly selectedSizeId: string;
     readonly onSelectSize: (sizeId: string) => void;
+    readonly label?: string;
 }
 
 export const SizeSelector = memo(function SizeSelector({
     sizes,
     selectedSizeId,
     onSelectSize,
+    label,
 }: SizeSelectorProps) {
     return (
         <View className="px-4 py-4">
             <Text className="text-lg font-bold text-neutral-900 mb-3">
-                Select Size
+                {label ?? "Select Size"}
             </Text>
             <View className="gap-2">
                 {sizes.map((size) => {

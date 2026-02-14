@@ -44,6 +44,33 @@ export interface MenuItemDto {
     updated_at: string;
 }
 
+export interface OptionDto {
+    id: string;
+    option_group_id: string;
+    name: string;
+    price_delta: number;
+    sort_order: number;
+    is_available: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface OptionGroupDto {
+    id: string;
+    menu_item_id: string;
+    name: string;
+    selection_type: "single" | "multiple";
+    sort_order: number;
+    is_required: boolean;
+    options: OptionDto[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface MenuItemDetailDto extends MenuItemDto {
+    option_groups: OptionGroupDto[];
+}
+
 interface MerchantListResponse {
     items: MerchantDto[];
     total: number;
@@ -73,6 +100,16 @@ export async function fetchMerchantMenu(
     const response = await api.get<MenuItemDto[]>(`/merchants/${merchantId}/menu`, {
         params,
     });
+    return response.data;
+}
+
+export async function fetchMenuItemDetail(
+    merchantId: string,
+    itemId: string,
+): Promise<MenuItemDetailDto> {
+    const response = await api.get<MenuItemDetailDto>(
+        `/merchants/${merchantId}/menu/${itemId}`,
+    );
     return response.data;
 }
 

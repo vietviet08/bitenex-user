@@ -19,6 +19,7 @@ import {
     useCartDiscount,
     useDeliveryFee,
 } from "@/store/zustand/cart.store";
+import { createOrder, cartItemsToOrderItems } from "@/services/order";
 
 // Mock data
 const DELIVERY_TIME_OPTIONS: DeliveryTimeOption[] = [
@@ -37,6 +38,7 @@ export default function CheckoutScreen() {
     const discount = useCartDiscount();
     const deliveryFee = useDeliveryFee();
     const clearCart = useCartStore((state) => state.clearCart);
+    const cartMerchantId = useCartStore((state) => state.merchantId);
 
     // Local state for checkout options
     const [selectedTimeId, setSelectedTimeId] = useState("asap");
@@ -62,18 +64,30 @@ export default function CheckoutScreen() {
     }, []);
 
     const handlePlaceOrder = useCallback(async () => {
+        if (!cartMerchantId || items.length === 0) return;
+
         setIsPlacingOrder(true);
+        try {
+            await createOrder({
+                merchant_id: cartMerchantId,
+                delivery_address: MOCK_ADDRESS,
+                notes: undefined,
+                items: cartItemsToOrderItems(items),
+            });
 
-        // Simulate API call to create order
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        // Clear cart
-        clearCart();
-        setIsPlacingOrder(false);
-
-        // Navigate to search driver screen
-        router.push("/order/search-driver");
-    }, [clearCart]);
+            clearCart();
+            router.push("/order/search-driver");
+        } catch (error) {
+            Alert.alert(
+                "Order Failed",
+                error instanceof Error
+                    ? error.message
+                    : "Unable to place order. Please try again.",
+            );
+        } finally {
+            setIsPlacingOrder(false);
+        }
+    }, [cartMerchantId, items, clearCart]);
 
     return (
         <View className="flex-1 bg-white">
