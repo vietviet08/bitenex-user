@@ -1,4 +1,4 @@
-import { View, ScrollView, Alert } from "react-native";
+import { View, ScrollView, Alert, Linking } from "react-native";
 import { useState, useCallback } from "react";
 import { router } from "expo-router";
 
@@ -19,7 +19,13 @@ import {
     useCartDiscount,
     useDeliveryFee,
 } from "@/store/zustand/cart.store";
+import { usePaymentStore } from "@/store/zustand/payment.store";
 import { createOrder, cartItemsToOrderItems } from "@/services/order";
+import {
+    createPayment,
+    generateIdempotencyKey,
+    type PaymentResponse,
+} from "@/services/payment";
 
 // Mock data
 const DELIVERY_TIME_OPTIONS: DeliveryTimeOption[] = [
@@ -28,8 +34,8 @@ const DELIVERY_TIME_OPTIONS: DeliveryTimeOption[] = [
 ];
 
 const MOCK_ADDRESS = "123 Main Street, Apt 4B\nNew York, NY 10001";
-const MOCK_CARD_TYPE = "Visa";
-const MOCK_CARD_LAST_FOUR = "4242";
+const MOCK_CARD_TYPE = "VNPAY";
+const MOCK_CARD_LAST_FOUR = "TEST";
 const TAX_RATE = 0.08; // 8% tax
 
 export default function CheckoutScreen() {
@@ -37,8 +43,8 @@ export default function CheckoutScreen() {
     const subtotal = useCartSubtotal();
     const discount = useCartDiscount();
     const deliveryFee = useDeliveryFee();
-    const clearCart = useCartStore((state) => state.clearCart);
     const cartMerchantId = useCartStore((state) => state.merchantId);
+    const setPendingPayment = usePaymentStore((state) => state.setPendingPayment);
 
     // Local state for checkout options
     const [selectedTimeId, setSelectedTimeId] = useState("asap");
@@ -68,18 +74,48 @@ export default function CheckoutScreen() {
 
         setIsPlacingOrder(true);
         try {
-            await createOrder({
+            const order = await createOrder({
                 merchant_id: cartMerchantId,
                 delivery_address: MOCK_ADDRESS,
-                notes: undefined,
+                customer_note: undefined,
                 items: cartItemsToOrderItems(items),
             });
 
-            clearCart();
-            router.push("/order/search-driver");
+            const payment: PaymentResponse = await createPayment(
+                {
+                    order_id: order.id,
+                    amount: order.total,
+                    currency: "VND",
+                    method: "VNPAY",
+                },
+                generateIdempotencyKey(`checkout-${order.id}`),
+            );
+
+            if (!payment.payment_url) {
+                throw new Error("Payment URL was not returned by server.");
+            }
+
+            setPendingPayment({
+                orderId: order.id,
+                paymentId: payment.id,
+                transactionId: payment.transaction_id,
+            });
+            router.push({
+                pathname: "/order/payment-processing",
+                params: {
+                    orderId: order.id,
+                    transactionId: payment.transaction_id,
+                },
+            });
+
+            const canOpen = await Linking.canOpenURL(payment.payment_url);
+            if (!canOpen) {
+                throw new Error("Unable to open VNPAY payment link.");
+            }
+            await Linking.openURL(payment.payment_url);
         } catch (error) {
             Alert.alert(
-                "Order Failed",
+                "Checkout Failed",
                 error instanceof Error
                     ? error.message
                     : "Unable to place order. Please try again.",
@@ -87,7 +123,7 @@ export default function CheckoutScreen() {
         } finally {
             setIsPlacingOrder(false);
         }
-    }, [cartMerchantId, items, clearCart]);
+    }, [cartMerchantId, items, setPendingPayment]);
 
     return (
         <View className="flex-1 bg-white">

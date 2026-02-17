@@ -159,6 +159,22 @@ function RootLayoutNav() {
                 />
 
                 <Stack.Screen
+                    name="order/payment-processing"
+                    options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                    }}
+                />
+
+                <Stack.Screen
+                    name="payment/result"
+                    options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                    }}
+                />
+
+                <Stack.Screen
                     name="modal"
                     options={{
                         presentation: "modal",

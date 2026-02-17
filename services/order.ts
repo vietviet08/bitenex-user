@@ -1,8 +1,6 @@
 import { api } from "./api";
 import type { CartItem, SelectedOptionRef } from "@/store/zustand/cart.store";
 
-// ── Request types ────────────────────────────────────────────────────
-
 export interface SelectedOptionInput {
     option_group_id: string;
     option_id: string;
@@ -20,43 +18,46 @@ export interface CreateOrderInput {
     delivery_address: string;
     delivery_latitude?: number;
     delivery_longitude?: number;
-    notes?: string;
+    customer_note?: string;
     items: OrderItemInput[];
 }
-
-// ── Response types ───────────────────────────────────────────────────
 
 export interface OrderItemResponse {
     id: string;
     menu_item_id: string;
-    quantity: number;
+    name: string;
     price: number;
+    quantity: number;
     subtotal: number;
     notes: string | null;
     selected_options: string | null;
-    created_at: string;
-    updated_at: string;
 }
 
 export interface OrderResponse {
     id: string;
+    order_number: string;
     user_id: string;
     merchant_id: string;
+    driver_id: string | null;
     status: string;
-    total_amount: number;
+    subtotal: number;
     delivery_fee: number;
+    tax: number;
+    discount: number;
+    total: number;
     delivery_address: string;
-    notes: string | null;
+    delivery_latitude: number | null;
+    delivery_longitude: number | null;
+    customer_note: string | null;
+    estimated_prep_time: number | null;
+    estimated_delivery_time: number | null;
     items: OrderItemResponse[];
     created_at: string;
     updated_at: string;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────
-
 /**
  * Maps cart items to the `OrderItemInput[]` format expected by the API.
- * Includes selected options and special instructions.
  */
 export function cartItemsToOrderItems(cartItems: CartItem[]): OrderItemInput[] {
     return cartItems.map((item) => ({
@@ -73,11 +74,12 @@ export function cartItemsToOrderItems(cartItems: CartItem[]): OrderItemInput[] {
     }));
 }
 
-// ── API calls ────────────────────────────────────────────────────────
-
-export async function createOrder(
-    payload: CreateOrderInput,
-): Promise<OrderResponse> {
+export async function createOrder(payload: CreateOrderInput): Promise<OrderResponse> {
     const response = await api.post<OrderResponse>("/orders", payload);
+    return response.data;
+}
+
+export async function getOrderById(orderId: string): Promise<OrderResponse> {
+    const response = await api.get<OrderResponse>(`/orders/${orderId}`);
     return response.data;
 }
