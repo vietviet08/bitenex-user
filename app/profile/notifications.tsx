@@ -1,96 +1,192 @@
-import React, { useCallback } from "react";
-import { View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useCallback, useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Pressable,
+    RefreshControl,
+    Text,
+    View,
+} from "react-native";
+import { router } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
-import { ScreenHeader, NotificationItem } from "@/components/profile";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-type NotificationType = "success" | "cancelled" | "info" | "promo" | "account";
+import { ScreenHeader } from "@/components/profile";
+import {
+    getNotifications,
+    markAllNotificationsAsRead,
+    markNotificationAsRead,
+    socketClient,
+    type NotificationItem,
+} from "@/services";
+import { useNotificationStore } from "@/store/zustand/notification.store";
 
-interface Notification {
-    id: string;
-    type: NotificationType;
-    title: string;
-    message: string;
-    timestamp: string;
-    isNew: boolean;
+function formatDate(value: string): string {
+    return new Date(value).toLocaleString();
 }
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-    {
-        id: "1",
-        type: "cancelled",
-        title: "Orders Cancelled!",
-        message:
-            "You have canceled an order at Burger Hut. We apologize for your inconvenience. We will try to improve our service next time 😢",
-        timestamp: "19 Dec, 2022 | 20:50 PM",
-        isNew: true,
-    },
-    {
-        id: "2",
-        type: "success",
-        title: "Orders Successful!",
-        message:
-            "You have placed an order at Burger Hut and paid $24. Your food will arrive soon. Enjoy our services 😃",
-        timestamp: "19 Dec, 2022 | 20:49 PM",
-        isNew: true,
-    },
-    {
-        id: "3",
-        type: "info",
-        title: "New Services Available!",
-        message:
-            "You can now make multiple food orders at one time. You can also cancel your orders.",
-        timestamp: "14 Dec, 2022 | 10:52 AM",
-        isNew: false,
-    },
-    {
-        id: "4",
-        type: "promo",
-        title: "Credit Card Connected!",
-        message:
-            "Your credit card has been successfully linked with Foodu. Enjoy our services.",
-        timestamp: "12 Dec, 2022 | 15:38 PM",
-        isNew: false,
-    },
-    {
-        id: "5",
-        type: "account",
-        title: "Account Setup Successful!",
-        message:
-            "Your account creation is successful, you can now experience our services.",
-        timestamp: "12 Dec, 2022 | 14:27 PM",
-        isNew: false,
-    },
-];
-
 export default function NotificationsScreen() {
-    const renderItem = useCallback(
-        ({ item }: { item: Notification }) => (
-            <View className="mb-3">
-                <NotificationItem
-                    id={item.id}
-                    type={item.type}
-                    title={item.title}
-                    message={item.message}
-                    timestamp={item.timestamp}
-                    isNew={item.isNew}
-                />
-            </View>
-        ),
-        []
-    );
+    const [items, setItems] = useState<NotificationItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isMarkingAll, setIsMarkingAll] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const unreadCount = useNotificationStore((state) => state.unreadCount);
+    const setUnreadCount = useNotificationStore((state) => state.setUnreadCount);
+    const decrementUnread = useNotificationStore((state) => state.decrementUnread);
+
+    const fetchHistory = useCallback(async (silent = false) => {
+        if (silent) {
+            setIsRefreshing(true);
+        } else {
+            setIsLoading(true);
+        }
+        setErrorMessage("");
+        try {
+            const response = await getNotifications({
+                page: 1,
+                per_page: 100,
+            });
+            setItems(response.items);
+            setUnreadCount(response.unread_count);
+        } catch (error) {
+            setErrorMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to load notifications",
+            );
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
+    }, [setUnreadCount]);
+
+    useEffect(() => {
+        fetchHistory();
+    }, [fetchHistory]);
+
+    useEffect(() => {
+        const onRealtimeNotification = (payload: NotificationItem) => {
+            setItems((prev) => [payload, ...prev]);
+        };
+
+        socketClient.on("notification.new", onRealtimeNotification);
+        return () => {
+            socketClient.off("notification.new", onRealtimeNotification);
+        };
+    }, []);
+
+    const openNotification = async (item: NotificationItem) => {
+        if (!item.is_read) {
+            try {
+                await markNotificationAsRead(item.id);
+                setItems((prev) =>
+                    prev.map((entry) =>
+                        entry.id === item.id ? { ...entry, is_read: true } : entry,
+                    ),
+                );
+                decrementUnread(1);
+            } catch {}
+        }
+
+        const orderId =
+            typeof item.data?.order_id === "string" ? item.data.order_id : null;
+        if (orderId) {
+            router.push({
+                pathname: "/order/tracking",
+                params: { orderId },
+            });
+        }
+    };
+
+    const markAllRead = async () => {
+        setIsMarkingAll(true);
+        try {
+            await markAllNotificationsAsRead();
+            setItems((prev) => prev.map((entry) => ({ ...entry, is_read: true })));
+            setUnreadCount(0);
+        } catch (error) {
+            setErrorMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to mark all as read",
+            );
+        } finally {
+            setIsMarkingAll(false);
+        }
+    };
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
-            <ScreenHeader title="Notification" />
-            <FlashList
-                data={MOCK_NOTIFICATIONS}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
-                showsVerticalScrollIndicator={false}
-                estimatedItemSize={140}
+            <ScreenHeader
+                title="Notification"
+                rightAction={
+                    <Pressable
+                        onPress={markAllRead}
+                        disabled={isMarkingAll || unreadCount === 0}
+                        className={`rounded-lg border border-neutral-300 px-3 py-1.5 ${
+                            isMarkingAll || unreadCount === 0 ? "opacity-50" : ""
+                        }`}
+                    >
+                        <Text className="text-xs font-semibold text-neutral-700">
+                            Read all
+                        </Text>
+                    </Pressable>
+                }
             />
+
+            {isLoading ? (
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator color="#2563EB" />
+                </View>
+            ) : null}
+
+            {!isLoading && errorMessage ? (
+                <View className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                    <Text className="text-sm text-red-600">{errorMessage}</Text>
+                </View>
+            ) : null}
+
+            {!isLoading && !errorMessage ? (
+                <FlashList
+                    data={items}
+                    keyExtractor={(item) => item.id}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefreshing}
+                            onRefresh={() => fetchHistory(true)}
+                        />
+                    }
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+                    ListEmptyComponent={
+                        <View className="rounded-xl border border-neutral-200 bg-white p-4">
+                            <Text className="text-sm text-neutral-500">
+                                No notifications yet.
+                            </Text>
+                        </View>
+                    }
+                    renderItem={({ item }) => (
+                        <Pressable
+                            onPress={() => openNotification(item)}
+                            className={`mb-3 rounded-xl border p-4 ${
+                                item.is_read
+                                    ? "border-neutral-200 bg-white"
+                                    : "border-primary-200 bg-primary-50"
+                            }`}
+                        >
+                            <Text className="text-sm font-semibold text-neutral-900">
+                                {item.title}
+                            </Text>
+                            <Text className="mt-1 text-sm text-neutral-600">
+                                {item.body}
+                            </Text>
+                            <Text className="mt-2 text-xs text-neutral-500">
+                                {formatDate(item.created_at)}
+                            </Text>
+                        </Pressable>
+                    )}
+                />
+            ) : null}
         </SafeAreaView>
     );
 }

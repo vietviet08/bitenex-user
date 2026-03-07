@@ -1,129 +1,154 @@
-import React, { useState, useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    View,
-    Text,
-    Pressable,
+    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
+    Pressable,
+    Text,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { FlashList, FlashListRef } from "@shopify/flash-list";
-import { Image } from "expo-image";
-import { ChatBubble, ChatInput, Message, Driver } from "@/components/tracking";
+
+import { ChatBubble, ChatInput, type Message } from "@/components/tracking";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useAuth } from "@/hooks/useAuth";
+import { getOrderChatMessages, socketClient, type ChatMessageData } from "@/services";
 
-// Mock data - API ready interfaces
-const MOCK_DRIVER: Driver = {
-    id: "driver-1",
-    name: "John Smith",
-    avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
-    rating: 4.8,
-    totalDeliveries: 156,
-    phone: "+84 912 345 678",
-    vehicle: {
-        type: "Motorcycle",
-        model: "Honda Wave",
-        plate: "59H1-12345",
-        color: "Red",
-    },
-};
-
-const INITIAL_MESSAGES: Message[] = [
-    {
-        id: "1",
-        senderId: "driver-1",
-        content: "Hi! I'm on my way to pick up your order.",
-        timestamp: "10:30 AM",
-        type: "text",
-        isMe: false,
-    },
-    {
-        id: "2",
-        senderId: "user-1",
-        content: "Great! How long will it take?",
-        timestamp: "10:31 AM",
-        type: "text",
-        isMe: true,
-    },
-    {
-        id: "3",
-        senderId: "driver-1",
-        content:
-            "About 15 minutes. I'll let you know when I'm at the restaurant.",
-        timestamp: "10:32 AM",
-        type: "text",
-        isMe: false,
-    },
-];
+function formatChatTime(timestamp: string): string {
+    return new Date(timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
 
 export default function ChatScreen() {
-    const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+    const params = useLocalSearchParams<{ orderId?: string }>();
+    const orderId =
+        typeof params.orderId === "string" && params.orderId.trim()
+            ? params.orderId.trim()
+            : "";
+
+    const { user } = useAuth();
     const listRef = useRef<FlashListRef<Message>>(null);
+    const [messages, setMessages] = useState<ChatMessageData[]>([]);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+    const [historyError, setHistoryError] = useState("");
 
-    const handleSend = useCallback((text: string) => {
-        const newMessage: Message = {
-            id: Date.now().toString(),
-            senderId: "user-1",
-            content: text,
-            timestamp: new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-            }),
-            type: "text",
-            isMe: true,
+    useEffect(() => {
+        if (!orderId) {
+            setIsLoadingHistory(false);
+            return;
+        }
+
+        const fetchHistory = async () => {
+            setIsLoadingHistory(true);
+            setHistoryError("");
+            try {
+                const response = await getOrderChatMessages(orderId, {
+                    page: 1,
+                    per_page: 200,
+                });
+                setMessages((prev) => {
+                    const merged = [...response.items, ...prev];
+                    const byId = new Map<string, ChatMessageData>();
+                    for (const item of merged) {
+                        byId.set(item.message_id, item);
+                    }
+                    return Array.from(byId.values());
+                });
+            } catch (error) {
+                setHistoryError(
+                    error instanceof Error
+                        ? error.message
+                        : "Failed to load chat history",
+                );
+            } finally {
+                setIsLoadingHistory(false);
+            }
         };
-        setMessages((prev) => [...prev, newMessage]);
 
-        // Scroll to bottom
-        setTimeout(() => {
-            listRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-    }, []);
+        fetchHistory();
+    }, [orderId]);
 
-    const handleCallPress = () => {
-        router.push("/order/call");
-    };
+    useEffect(() => {
+        const onMessage = (payload: ChatMessageData) => {
+            if (payload.order_id !== orderId) return;
+            setMessages((prev) => {
+                if (prev.some((item) => item.message_id === payload.message_id)) {
+                    return prev;
+                }
+                return [...prev, payload];
+            });
+            setTimeout(() => {
+                listRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+        };
+
+        socketClient.on("chat.message", onMessage);
+        return () => {
+            socketClient.off("chat.message", onMessage);
+        };
+    }, [orderId]);
+
+    const uiMessages = useMemo<Message[]>(
+        () =>
+            [...messages]
+                .sort(
+                    (a, b) =>
+                        new Date(a.timestamp).getTime() -
+                        new Date(b.timestamp).getTime(),
+                )
+                .map((message) => ({
+                    id: message.message_id,
+                    senderId: message.sender_id,
+                    content: message.content,
+                    timestamp: formatChatTime(message.timestamp),
+                    type: "text",
+                    isMe: message.sender_id === user?.id,
+                })),
+        [messages, user?.id],
+    );
+
+    const handleSend = useCallback(
+        (text: string) => {
+            if (!orderId) return;
+            socketClient.emit("chat.send", {
+                order_id: orderId,
+                content: text,
+            });
+        },
+        [orderId],
+    );
 
     const renderItem = useCallback(
         ({ item }: { item: Message }) => (
-            <ChatBubble message={item} senderAvatar={MOCK_DRIVER.avatarUrl} />
+            <ChatBubble
+                message={item}
+                senderAvatar="https://images.unsplash.com/photo-1556157382-97eda2d62296?w=120"
+            />
         ),
         [],
     );
 
     return (
         <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
-            {/* Header */}
-            <View className="flex-row items-center px-4 py-3 border-b border-gray-100">
+            <View className="flex-row items-center border-b border-gray-100 px-4 py-3">
                 <Pressable
                     onPress={() => router.back()}
-                    className="p-2 -ml-2 rounded-full active:bg-gray-100"
+                    className="-ml-2 rounded-full p-2 active:bg-gray-100"
                 >
                     <IconSymbol name="arrow-back" size={24} color="#212121" />
                 </Pressable>
-                <View className="flex-1 flex-row items-center gap-3 ml-2">
-                    <Image
-                        source={{ uri: MOCK_DRIVER.avatarUrl }}
-                        style={{ width: 40, height: 40, borderRadius: 20 }}
-                        contentFit="cover"
-                    />
-                    <View>
-                        <Text className="font-bold text-text-primary">
-                            {MOCK_DRIVER.name}
-                        </Text>
-                        <Text className="text-sm text-green-500">Online</Text>
-                    </View>
+                <View className="ml-2 flex-1">
+                    <Text className="font-bold text-text-primary">Merchant Chat</Text>
+                    <Text className="text-xs text-text-secondary">
+                        {orderId ? `Order ${orderId}` : "Order chat"}
+                    </Text>
                 </View>
-                <Pressable
-                    onPress={handleCallPress}
-                    className="w-10 h-10 rounded-full bg-primary-500 items-center justify-center active:bg-primary-600"
-                >
-                    <IconSymbol name="phone" size={20} color="#ffffff" />
-                </Pressable>
             </View>
 
-            {/* Messages */}
             <KeyboardAvoidingView
                 className="flex-1"
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -131,10 +156,29 @@ export default function ChatScreen() {
                 <View className="flex-1 px-4 pt-4">
                     <FlashList
                         ref={listRef}
-                        data={messages}
+                        data={uiMessages}
                         renderItem={renderItem}
                         keyExtractor={(item) => item.id}
                         showsVerticalScrollIndicator={false}
+                        ListEmptyComponent={
+                            isLoadingHistory ? (
+                                <View className="items-center py-6">
+                                    <ActivityIndicator color="#2563EB" />
+                                </View>
+                            ) : historyError ? (
+                                <View className="rounded-xl border border-red-200 bg-red-50 p-4">
+                                    <Text className="text-sm text-red-600">
+                                        {historyError}
+                                    </Text>
+                                </View>
+                            ) : (
+                                <View className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                                    <Text className="text-sm text-neutral-500">
+                                        Start chat with merchant for this order.
+                                    </Text>
+                                </View>
+                            )
+                        }
                     />
                 </View>
                 <ChatInput onSend={handleSend} />

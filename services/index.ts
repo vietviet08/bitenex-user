@@ -6,7 +6,14 @@ export { api, setLogoutCallback } from './api';
 export { tokenService, TOKEN_KEY, REFRESH_TOKEN_KEY } from './tokenService';
 export { type ApiError, ApiErrorException } from './apiError';
 export { transformError } from './errorHandler';
-export { socketClient, type SocketEvents } from './socket';
+export {
+  socketClient,
+  type SocketEvents,
+  type ChatMessageData,
+  type ChatTypingData,
+  type NotificationData,
+  type OrderStatusEventData,
+} from './socket';
 export {
   createOrder,
   getOrderById,
@@ -36,3 +43,15 @@ export {
   type MenuItemDto,
   type RestaurantCardDto,
 } from './merchant';
+export {
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  type NotificationItem,
+  type NotificationListResponse,
+} from './notification';
+export {
+  getOrderChatMessages,
+  type ChatMessageItem,
+  type ChatMessageListResponse,
+} from './chat';
