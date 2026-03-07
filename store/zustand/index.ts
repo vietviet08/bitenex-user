@@ -35,3 +35,8 @@ export {
   type DriverLocation,
   type DeliveryAddress,
 } from './order.store';
+
+export {
+  useNotificationStore,
+  useUnreadCount,
+} from './notification.store';

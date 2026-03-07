@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { View, Text, ScrollView, Pressable, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ScreenHeader } from "@/components/profile";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
@@ -79,6 +79,12 @@ function estimateArrival(distanceKm: number): string {
 }
 
 export default function TrackingScreen() {
+    const params = useLocalSearchParams<{ orderId?: string }>();
+    const trackedOrderId =
+        typeof params.orderId === "string" && params.orderId.trim()
+            ? params.orderId.trim()
+            : MOCK_ORDER.id;
+
     const [driverLocation, setDriverLocation] = useState<Location>(
         MOCK_LOCATIONS.driver,
     );
@@ -120,7 +126,10 @@ export default function TrackingScreen() {
     }, []);
 
     const handleChatPress = () => {
-        router.push("/order/chat");
+        router.push({
+            pathname: "/order/chat",
+            params: { orderId: trackedOrderId },
+        });
     };
 
     const handleCallPress = () => {

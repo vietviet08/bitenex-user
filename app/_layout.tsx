@@ -12,6 +12,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
 import { socketClient } from "@/services";
 import { getHasRehydrated, useAuthStore } from "@/store/zustand/auth.store";
+import { useNotificationStore } from "@/store/zustand/notification.store";
 import {
     useHasCompletedWalkthrough,
     useOnboardingChecked,
@@ -27,6 +28,11 @@ export const unstable_settings = {
 
 function RootLayoutNav() {
     const { isAuthenticated, isInitialized } = useAuth();
+    const refreshUnreadCount = useNotificationStore(
+        (state) => state.refreshUnreadCount,
+    );
+    const incrementUnread = useNotificationStore((state) => state.incrementUnread);
+    const clearUnread = useNotificationStore((state) => state.clearUnread);
     const segments = useSegments();
     const hasBootstrapped = useRef(false);
     const rehydrationCheckRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -70,10 +76,29 @@ function RootLayoutNav() {
     useEffect(() => {
         if (isAuthenticated) {
             socketClient.connect();
+            refreshUnreadCount();
         } else {
             socketClient.disconnect();
+            clearUnread();
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, refreshUnreadCount, clearUnread]);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            return;
+        }
+
+        const onNotification = (payload: { is_read?: boolean }) => {
+            if (!payload?.is_read) {
+                incrementUnread();
+            }
+        };
+
+        socketClient.on("notification.new", onNotification);
+        return () => {
+            socketClient.off("notification.new", onNotification);
+        };
+    }, [isAuthenticated, incrementUnread]);
 
     useEffect(() => {
         if (isInitialized && isOnboardingChecked) {

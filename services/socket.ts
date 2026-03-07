@@ -1,177 +1,242 @@
-import { io, Socket } from 'socket.io-client';
-import { tokenService } from './tokenService';
+import { tokenService } from "./tokenService";
 
 const SOCKET_URL =
     process.env.EXPO_PUBLIC_WEBSOCKET_URL;
 
 export interface SocketEvents {
-  connect: () => void;
-  disconnect: (reason: string) => void;
-  connect_error: (error: Error) => void;
+    connect: () => void;
+    disconnect: (reason: string) => void;
+    connect_error: (error: Error) => void;
+    error: (data: { code?: string; message?: string }) => void;
+    pong: (data: { timestamp: string }) => void;
 
-  'order.created': (data: OrderEventData) => void;
-  'order.updated': (data: OrderEventData) => void;
-  'order.status_changed': (data: OrderStatusEventData) => void;
-
-  'driver.location_updated': (data: DriverLocationData) => void;
-  'driver.assigned': (data: DriverAssignedData) => void;
-
-  'chat.message': (data: ChatMessageData) => void;
-
-  'notification.new': (data: NotificationData) => void;
-}
-
-export interface OrderEventData {
-  orderId: string;
-  status: string;
-  updatedAt: string;
+    "order.status_changed": (data: OrderStatusEventData) => void;
+    "chat.message": (data: ChatMessageData) => void;
+    "chat.typing": (data: ChatTypingData) => void;
+    "notification.new": (data: NotificationData) => void;
 }
 
 export interface OrderStatusEventData {
-  orderId: string;
-  previousStatus: string;
-  newStatus: string;
-  timestamp: string;
-}
-
-export interface DriverLocationData {
-  driverId: string;
-  orderId: string;
-  latitude: number;
-  longitude: number;
-  heading?: number;
-  speed?: number;
-  timestamp: string;
-}
-
-export interface DriverAssignedData {
-  orderId: string;
-  driverId: string;
-  driverName: string;
-  driverPhone: string;
-  estimatedArrival: string;
+    order_id: string;
+    order_number?: string;
+    previous_status: string | null;
+    new_status: string;
+    merchant_id?: string;
+    user_id?: string;
+    reason?: string | null;
+    updated_at: string;
 }
 
 export interface ChatMessageData {
-  messageId: string;
-  senderId: string;
-  content: string;
-  timestamp: string;
+    message_id: string;
+    order_id: string;
+    sender_id: string;
+    receiver_id: string;
+    content: string;
+    message_type?: string;
+    timestamp: string;
+}
+
+export interface ChatTypingData {
+    order_id: string;
+    sender_id: string;
+    receiver_id: string;
+    is_typing: boolean;
+    timestamp: string;
 }
 
 export interface NotificationData {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  data?: Record<string, unknown>;
+    id: string;
+    user_id: string;
+    type: string;
+    channel: string;
+    title: string;
+    body: string;
+    data: Record<string, unknown> | null;
+    is_read: boolean;
+    is_sent: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 class SocketClient {
-  private socket: Socket | null = null;
-  private reconnectAttempts = 0;
-  private readonly maxReconnectAttempts = 5;
+    private socket: WebSocket | null = null;
+    private listeners = new Map<string, Set<(payload: unknown) => void>>();
+    private isConnecting = false;
+    private reconnectAttempts = 0;
+    private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    private manuallyClosed = false;
+    private readonly maxReconnectAttempts = 5;
+    private readonly reconnectDelayMs = 2000;
 
-  async connect(): Promise<void> {
-    if (this.socket?.connected) {
-      console.log('[Socket] Already connected');
-      return;
+    private emitLocal(event: string, payload?: unknown): void {
+        const handlers = this.listeners.get(event);
+        if (!handlers || handlers.size === 0) return;
+        handlers.forEach((handler) => {
+            try {
+                handler(payload);
+            } catch (error) {
+                console.warn(`[Socket] Listener failed for ${event}:`, error);
+            }
+        });
     }
 
-    if (!SOCKET_URL) {
-      console.warn('[Socket] WebSocket URL not configured, skipping connection');
-      return;
+    private buildSocketUrl(token: string): string {
+        let normalized = SOCKET_URL || "";
+        if (!normalized.includes("/ws")) {
+            normalized = `${normalized.replace(/\/$/, "")}/api/v1/ws`;
+        }
+        const separator = normalized.includes("?") ? "&" : "?";
+        return `${normalized}${separator}token=${encodeURIComponent(token)}`;
     }
 
-    const token = await tokenService.getToken();
-    
-    if (!token) {
-      console.warn('[Socket] No token available, skipping connection');
-      return;
+    private clearReconnectTimer(): void {
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
     }
 
-    try {
-      this.socket = io(SOCKET_URL, {
-        auth: { token },
-        transports: ['websocket'],
-        autoConnect: true,
-        reconnection: false,
-        reconnectionAttempts: 0,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 5000,
-      });
+    private scheduleReconnect(): void {
+        if (this.manuallyClosed) return;
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            console.warn("[Socket] Max reconnection attempts reached");
+            return;
+        }
 
-      this.setupDefaultListeners();
-    } catch (error) {
-      console.error('[Socket] Failed to initialize connection:', error);
+        this.reconnectAttempts += 1;
+        this.clearReconnectTimer();
+        this.reconnectTimer = setTimeout(() => {
+            this.connect();
+        }, this.reconnectDelayMs);
     }
-  }
 
-  private setupDefaultListeners(): void {
-    if (!this.socket) return;
-
-    this.socket.on('connect', () => {
-      console.log('[Socket] Connected:', this.socket?.id);
-      this.reconnectAttempts = 0;
-    });
-
-    this.socket.on('disconnect', (reason) => {
-      console.log('[Socket] Disconnected:', reason);
-    });
-
-    this.socket.on('connect_error', (error) => {
-      if (this.reconnectAttempts === 0) {
-        console.warn('[Socket] Connection error (server may not support Socket.IO):', error.message);
-      }
-      this.reconnectAttempts++;
-      
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.warn('[Socket] Max reconnection attempts reached, giving up');
-        this.disconnect();
-      }
-    });
-  }
-
-  disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-      console.log('[Socket] Manually disconnected');
+    private handleMessage(raw: string): void {
+        try {
+            const parsed = JSON.parse(raw) as {
+                event?: string;
+                data?: unknown;
+            };
+            if (!parsed?.event) return;
+            this.emitLocal(parsed.event, parsed.data);
+        } catch (error) {
+            console.warn("[Socket] Failed to parse message:", error);
+        }
     }
-  }
 
-  on<K extends keyof SocketEvents>(event: K, callback: SocketEvents[K]): void {
-    this.socket?.on(event as string, callback as any);
-  }
+    async connect(): Promise<void> {
+        if (this.isConnected || this.isConnecting) {
+            return;
+        }
 
-  off<K extends keyof SocketEvents>(event: K, callback?: SocketEvents[K]): void {
-    if (callback) {
-      this.socket?.off(event as string, callback as any);
-    } else {
-      this.socket?.off(event as string);
+        if (!SOCKET_URL) {
+            console.warn("[Socket] WebSocket URL not configured, skipping connection");
+            return;
+        }
+
+        const token = await tokenService.getToken();
+        if (!token) {
+            return;
+        }
+
+        try {
+            this.manuallyClosed = false;
+            this.isConnecting = true;
+            const ws = new WebSocket(this.buildSocketUrl(token));
+
+            ws.onopen = () => {
+                this.socket = ws;
+                this.isConnecting = false;
+                this.reconnectAttempts = 0;
+                this.clearReconnectTimer();
+                this.emitLocal("connect");
+            };
+
+            ws.onmessage = (event) => {
+                if (typeof event.data === "string") {
+                    this.handleMessage(event.data);
+                }
+            };
+
+            ws.onerror = () => {
+                this.isConnecting = false;
+                this.emitLocal("connect_error", new Error("WebSocket connection error"));
+            };
+
+            ws.onclose = (event) => {
+                this.socket = null;
+                this.isConnecting = false;
+                const reason = event.reason || "connection_closed";
+                this.emitLocal("disconnect", reason);
+                this.scheduleReconnect();
+            };
+        } catch (error) {
+            this.isConnecting = false;
+            console.error("[Socket] Failed to initialize connection:", error);
+        }
     }
-  }
 
-  emit(event: string, data?: unknown): void {
-    this.socket?.emit(event, data);
-  }
+    disconnect(): void {
+        this.manuallyClosed = true;
+        this.isConnecting = false;
+        this.clearReconnectTimer();
+        if (!this.socket) return;
+        this.socket.close();
+        this.socket = null;
+        this.emitLocal("disconnect", "manual_disconnect");
+    }
 
-  joinRoom(room: string): void {
-    this.socket?.emit('join', { room });
-  }
+    on<K extends keyof SocketEvents>(event: K, callback: SocketEvents[K]): void {
+        const key = event as string;
+        if (!this.listeners.has(key)) {
+            this.listeners.set(key, new Set());
+        }
+        this.listeners.get(key)?.add(callback as (payload: unknown) => void);
+    }
 
-  leaveRoom(room: string): void {
-    this.socket?.emit('leave', { room });
-  }
+    off<K extends keyof SocketEvents>(event: K, callback?: SocketEvents[K]): void {
+        const key = event as string;
+        const handlers = this.listeners.get(key);
+        if (!handlers) return;
 
-  get isConnected(): boolean {
-    return this.socket?.connected ?? false;
-  }
+        if (callback) {
+            handlers.delete(callback as (payload: unknown) => void);
+        } else {
+            handlers.clear();
+        }
 
-  get socketId(): string | undefined {
-    return this.socket?.id;
-  }
+        if (handlers.size === 0) {
+            this.listeners.delete(key);
+        }
+    }
+
+    emit(event: string, data?: unknown): void {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            return;
+        }
+        this.socket.send(
+            JSON.stringify({
+                event,
+                data: data ?? {},
+            }),
+        );
+    }
+
+    joinRoom(room: string): void {
+        this.emit("join", { room });
+    }
+
+    leaveRoom(room: string): void {
+        this.emit("leave", { room });
+    }
+
+    get isConnected(): boolean {
+        return this.socket?.readyState === WebSocket.OPEN;
+    }
+
+    get socketId(): string | undefined {
+        return undefined;
+    }
 }
 
 export const socketClient = new SocketClient();
