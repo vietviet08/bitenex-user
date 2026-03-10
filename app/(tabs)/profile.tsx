@@ -1,11 +1,10 @@
-import React from "react";
-import { View, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ProfileHeader,
-  SettingsSection,
   SettingsMenuItem,
+  SettingsSection,
 } from "@/components/profile";
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Mock user data
 const MOCK_USER = {
@@ -23,10 +22,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="flex-row items-center gap-3 px-6 py-4">
           <View className="bg-primary-100 p-1.5 rounded-full">
@@ -63,6 +59,11 @@ export default function ProfileScreen() {
               icon="local-offer"
               label="Special Offers & Promo"
               href="/profile/promos"
+            />
+            <SettingsMenuItem
+              icon="card-giftcard"
+              label="My Vouchers"
+              href="/profile/vouchers"
             />
             <SettingsMenuItem
               icon="wallet"

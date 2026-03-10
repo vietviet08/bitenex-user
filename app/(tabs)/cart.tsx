@@ -1,80 +1,102 @@
-import { View, ScrollView } from "react-native";
 import { useCallback } from "react";
+import { ScrollView, View } from "react-native";
 
 import {
-    CartHeader,
-    CartItemList,
-    PromoCodeInput,
-    OrderSummary,
-    CheckoutButton,
+  CartHeader,
+  CartItemList,
+  CheckoutButton,
+  OrderSummary,
+  PromoCodeInput,
+  VoucherInput,
 } from "@/components/cart";
 import {
-    useCartStore,
-    useCartItems,
-    useCartSubtotal,
-    useCartTotal,
-    useCartDiscount,
-    useCartPromoCode,
-    useDeliveryFee,
+  useCartDiscount,
+  useCartItems,
+  useCartPromoCode,
+  useCartStore,
+  useCartSubtotal,
+  useCartTotal,
+  useCartVoucherCode,
+  useDeliveryFee,
 } from "@/store/zustand/cart.store";
 
 export default function CartScreen() {
-    const items = useCartItems();
-    const subtotal = useCartSubtotal();
-    const total = useCartTotal();
-    const discount = useCartDiscount();
-    const promoCode = useCartPromoCode();
-    const deliveryFee = useDeliveryFee();
+  const items = useCartItems();
+  const subtotal = useCartSubtotal();
+  const total = useCartTotal();
+  const discount = useCartDiscount();
+  const promoCode = useCartPromoCode();
+  const voucherCode = useCartVoucherCode();
+  const deliveryFee = useDeliveryFee();
 
-    const applyPromo = useCartStore((state) => state.applyPromo);
-    const clearPromo = useCartStore((state) => state.clearPromo);
+  const applyPromo = useCartStore((state) => state.applyPromo);
+  const clearPromo = useCartStore((state) => state.clearPromo);
+  const applyVoucher = useCartStore((state) => state.applyVoucher);
+  const clearVoucher = useCartStore((state) => state.clearVoucher);
 
-    const handleApplyPromo = useCallback(
-        (code: string) => {
-            return applyPromo(code);
-        },
-        [applyPromo],
-    );
+  const handleApplyPromo = useCallback(
+    (code: string) => {
+      return applyPromo(code);
+    },
+    [applyPromo],
+  );
 
-    const handleClearPromo = useCallback(() => {
-        clearPromo();
-    }, [clearPromo]);
+  const handleClearPromo = useCallback(() => {
+    clearPromo();
+  }, [clearPromo]);
 
-    const hasItems = items.length > 0;
+  const handleApplyVoucher = useCallback(
+    (code: string) => {
+      return applyVoucher(code);
+    },
+    [applyVoucher],
+  );
 
-    return (
-        <View className="flex-1 bg-white">
-            <CartHeader />
+  const handleClearVoucher = useCallback(() => {
+    clearVoucher();
+  }, [clearVoucher]);
 
-            {hasItems ? (
-                <ScrollView
-                    className="flex-1"
-                    contentContainerStyle={{ paddingBottom: 16 }}
-                    showsVerticalScrollIndicator={false}
-                >
-                    <CartItemList items={items} />
+  const hasItems = items.length > 0;
 
-                    <PromoCodeInput
-                        currentPromoCode={promoCode}
-                        onApplyPromo={handleApplyPromo}
-                        onClearPromo={handleClearPromo}
-                    />
+  return (
+    <View className="flex-1 bg-white">
+      <CartHeader />
 
-                    <OrderSummary
-                        subtotal={subtotal}
-                        deliveryFee={deliveryFee}
-                        discount={discount}
-                        total={total}
-                    />
-                </ScrollView>
-            ) : (
-                <CartItemList items={items} />
-            )}
+      {hasItems ? (
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 16 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <CartItemList items={items} />
 
-            {hasItems && <CheckoutButton total={total} disabled={!hasItems} />}
+          <PromoCodeInput
+            currentPromoCode={promoCode}
+            onApplyPromo={handleApplyPromo}
+            onClearPromo={handleClearPromo}
+          />
 
-            {/* Spacer for tab bar */}
-            <View style={{ height: 88 }} />
-        </View>
-    );
+          <VoucherInput
+            currentVoucherCode={voucherCode}
+            onApplyVoucher={handleApplyVoucher}
+            onClearVoucher={handleClearVoucher}
+          />
+
+          <OrderSummary
+            subtotal={subtotal}
+            deliveryFee={deliveryFee}
+            discount={discount}
+            total={total}
+          />
+        </ScrollView>
+      ) : (
+        <CartItemList items={items} />
+      )}
+
+      {hasItems && <CheckoutButton total={total} disabled={!hasItems} />}
+
+      {/* Spacer for tab bar */}
+      <View style={{ height: 88 }} />
+    </View>
+  );
 }
