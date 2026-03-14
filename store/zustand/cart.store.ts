@@ -31,6 +31,7 @@ export interface CartItem {
 }
 
 interface CartState {
+  cartId: string | null;
   items: CartItem[];
   merchantId: string | null; // tracks current cart merchant
   promoCode: string;
@@ -74,9 +75,14 @@ const generateCartItemId = (): string => {
   return `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
+const generateCartSessionId = (): string => {
+  return `cart-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
+      cartId: null,
       items: [],
       merchantId: null,
       promoCode: "",
@@ -106,6 +112,10 @@ export const useCartStore = create<CartState>()(
         };
 
         set((state) => ({
+          cartId:
+            state.merchantId === itemData.merchantId
+              ? state.cartId ?? generateCartSessionId()
+              : generateCartSessionId(),
           items: [...state.items, newItem],
           merchantId: itemData.merchantId,
         }));
@@ -124,6 +134,7 @@ export const useCartStore = create<CartState>()(
         };
 
         set({
+          cartId: generateCartSessionId(),
           items: [newItem],
           merchantId: itemData.merchantId,
           promoCode: "",
@@ -132,9 +143,22 @@ export const useCartStore = create<CartState>()(
       },
 
       removeItem: (cartItemId) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== cartItemId),
-        }));
+        set((state) => {
+          const nextItems = state.items.filter((item) => item.id !== cartItemId);
+          if (nextItems.length === 0) {
+            return {
+              cartId: null,
+              items: [],
+              merchantId: null,
+              promoCode: "",
+              discount: 0,
+            };
+          }
+
+          return {
+            items: nextItems,
+          };
+        });
       },
 
       updateQuantity: (cartItemId, quantity) => {
@@ -172,6 +196,7 @@ export const useCartStore = create<CartState>()(
 
       clearCart: () => {
         set({
+          cartId: null,
           items: [],
           merchantId: null,
           promoCode: "",
@@ -183,6 +208,7 @@ export const useCartStore = create<CartState>()(
       name: "cart-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
+        cartId: state.cartId,
         items: state.items,
         merchantId: state.merchantId,
         promoCode: state.promoCode,
@@ -194,6 +220,7 @@ export const useCartStore = create<CartState>()(
 
 // Selector hooks
 export const useCartItems = () => useCartStore((state) => state.items);
+export const useCartId = () => useCartStore((state) => state.cartId);
 export const useCartItemCount = () => useCartStore((state) => state.getItemCount());
 export const useCartSubtotal = () => useCartStore((state) => state.getSubtotal());
 export const useCartTotal = () => useCartStore((state) => state.getTotal());
