@@ -13,6 +13,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { socketClient } from "@/services";
 import { getHasRehydrated, useAuthStore } from "@/store/zustand/auth.store";
 import {
+    startCartActivitySync,
+    stopCartActivitySync,
+} from "@/store/zustand/cartActivitySync";
+import {
     useHasCompletedWalkthrough,
     useOnboardingChecked,
     useOnboardingStore,
@@ -70,9 +74,14 @@ function RootLayoutNav() {
     useEffect(() => {
         if (isAuthenticated) {
             socketClient.connect();
+            startCartActivitySync();
         } else {
             socketClient.disconnect();
+            stopCartActivitySync();
         }
+        return () => {
+            stopCartActivitySync();
+        };
     }, [isAuthenticated]);
 
     useEffect(() => {

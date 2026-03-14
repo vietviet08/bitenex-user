@@ -14,12 +14,15 @@ export {
 export {
   useCartStore,
   useCartItems,
-  useCartMerchant,
+  useCartId,
   useCartItemCount,
   type CartItem,
-  type CartItemOption,
-  type CartMerchant,
 } from './cart.store';
+
+export {
+  startCartActivitySync,
+  stopCartActivitySync,
+} from './cartActivitySync';
 
 export {
   useOrderStore,

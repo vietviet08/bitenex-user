@@ -27,6 +27,10 @@ export {
 } from './payment';
 export { locationService, type Coordinates, type LocationWithDetails, type AddressDetails } from './location';
 export {
+  syncMyCartActivity,
+  type CartActivityPayload,
+} from './journey';
+export {
   fetchMerchantList,
   fetchMerchantDetail,
   fetchMerchantMenu,
