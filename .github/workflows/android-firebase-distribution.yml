@@ -1,88 +1,93 @@
 name: Android CI/CD Firebase Distribution
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-  workflow_dispatch:
+    push:
+        branches:
+            - main
+            - develop
+    workflow_dispatch:
 
 jobs:
-  android-release:
-    name: Build and Distribute Android APK
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
+    android-release:
+        name: Build and Distribute Android APK
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: .
 
-    env:
-      NODE_ENV: production
+        env:
+            NODE_ENV: production
 
-    steps:
-      - name: Code Push (Checkout)
-        uses: actions/checkout@v4
+        steps:
+            - name: Code Push (Checkout)
+              uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: 17
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+            - name: Setup Android SDK
+              uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK packages
-        run: |
-          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006" "cmake;3.22.1"
-          sdkmanager --licenses
+            - name: Install Android SDK packages
+              run: |
+                  sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006" "cmake;3.22.1"
+                  sdkmanager --licenses
 
-      - name: Install Dependencies
-        run: npm ci
+            - name: Install Dependencies
+              run: |
+                  if [ -f package-lock.json ]; then
+                    npm ci
+                  else
+                    echo "package-lock.json not found, falling back to npm install"
+                    npm install
+                  fi
 
-      - name: Detect optional scripts
-        id: script-check
-        run: |
-          HAS_LINT=$(node -e "const p=require('./package.json'); process.stdout.write(p.scripts && p.scripts.lint ? 'true' : 'false')")
-          HAS_TEST=$(node -e "const p=require('./package.json'); process.stdout.write(p.scripts && p.scripts.test ? 'true' : 'false')")
-          echo "has_lint=$HAS_LINT" >> "$GITHUB_OUTPUT"
-          echo "has_test=$HAS_TEST" >> "$GITHUB_OUTPUT"
+            - name: Detect optional scripts
+              id: script-check
+              run: |
+                  HAS_LINT=$(node -e "const p=require('./package.json'); process.stdout.write(p.scripts && p.scripts.lint ? 'true' : 'false')")
+                  HAS_TEST=$(node -e "const p=require('./package.json'); process.stdout.write(p.scripts && p.scripts.test ? 'true' : 'false')")
+                  echo "has_lint=$HAS_LINT" >> "$GITHUB_OUTPUT"
+                  echo "has_test=$HAS_TEST" >> "$GITHUB_OUTPUT"
 
-      - name: Lint (Basic)
-        if: steps.script-check.outputs.has_lint == 'true'
-        run: npm run lint
+            - name: Lint (Basic)
+              if: steps.script-check.outputs.has_lint == 'true'
+              run: npm run lint
 
-      - name: Unit Test (if available)
-        if: steps.script-check.outputs.has_test == 'true'
-        run: npm test -- --ci
+            - name: Unit Test (if available)
+              if: steps.script-check.outputs.has_test == 'true'
+              run: npm test -- --ci
 
-      - name: Prepare local.properties
-        working-directory: android
-        run: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+            - name: Prepare local.properties
+              working-directory: android
+              run: |
+                  echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
-      - name: Build App (assembleRelease)
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+            - name: Build App (assembleRelease)
+              working-directory: android
+              run: |
+                  chmod +x gradlew
+                  ./gradlew assembleRelease --no-daemon
 
-      - name: Verify APK output
-        run: ls -lh android/app/build/outputs/apk/release
+            - name: Verify APK output
+              run: ls -lh android/app/build/outputs/apk/release
 
-      - name: Upload Artifact to Firebase App Distribution
-        uses: wzieba/Firebase-Distribution-Github-Action@v1
-        with:
-          appId: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
-          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          groups: ${{ secrets.FIREBASE_TESTER_GROUPS }}
-          file: android/app/build/outputs/apk/release/app-release.apk
-          releaseNotes: |
-            CI build from commit ${{ github.sha }}
-            Branch: ${{ github.ref_name }}
-            Triggered by: ${{ github.actor }}
+            - name: Upload Artifact to Firebase App Distribution
+              uses: wzieba/Firebase-Distribution-Github-Action@v1
+              with:
+                  appId: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+                  serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+                  groups: ${{ secrets.FIREBASE_TESTER_GROUPS }}
+                  file: android/app/build/outputs/apk/release/app-release.apk
+                  releaseNotes: |
+                      CI build from commit ${{ github.sha }}
+                      Branch: ${{ github.ref_name }}
+                      Triggered by: ${{ github.actor }}
