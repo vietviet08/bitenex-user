@@ -22,22 +22,22 @@ jobs:
             - name: Detect project paths
               id: paths
               run: |
-                  if [ -d "android" ] && [ -f "package.json" ]; then
+                  if [ -f "package.json" ]; then
                     APP_DIR="."
-                    ANDROID_DIR="android"
-                    APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
-                  elif [ -d "bitenex-user/android" ] && [ -f "bitenex-user/package.json" ]; then
+                  elif [ -f "bitenex-user/package.json" ]; then
                     APP_DIR="bitenex-user"
-                    ANDROID_DIR="bitenex-user/android"
-                    APK_PATH="bitenex-user/android/app/build/outputs/apk/release/app-release.apk"
+                  elif [ -f "bitnex-user/package.json" ]; then
+                    APP_DIR="bitnex-user"
                   else
-                    echo "Cannot locate project paths. Expected either ./android or ./bitenex-user/android" >&2
-                    exit 1
+                    APP_DIR=$(find . -maxdepth 3 -type f -name package.json -not -path '*/node_modules/*' | sed 's#^\./##' | while read -r pkg; do dirname "$pkg"; done | head -n1)
+                    if [ -z "$APP_DIR" ]; then
+                      echo "Cannot locate app directory with package.json" >&2
+                      find . -maxdepth 3 -type d | sort
+                      exit 1
+                    fi
                   fi
 
                   echo "app_dir=$APP_DIR" >> "$GITHUB_OUTPUT"
-                  echo "android_dir=$ANDROID_DIR" >> "$GITHUB_OUTPUT"
-                  echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -68,6 +68,32 @@ jobs:
                     npm install --include=dev
                   fi
 
+            - name: Ensure Android project paths
+              id: android-paths
+              working-directory: ${{ steps.paths.outputs.app_dir }}
+              run: |
+                  if [ ! -d "android" ]; then
+                    echo "android directory not found. Generating with Expo prebuild..."
+                    npx expo prebuild --platform android --non-interactive
+                  fi
+
+                  if [ ! -d "android" ]; then
+                    echo "android directory still missing after prebuild" >&2
+                    exit 1
+                  fi
+
+                  APP_DIR="${{ steps.paths.outputs.app_dir }}"
+                  if [ "$APP_DIR" = "." ]; then
+                    ANDROID_DIR="android"
+                    APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+                  else
+                    ANDROID_DIR="$APP_DIR/android"
+                    APK_PATH="$APP_DIR/android/app/build/outputs/apk/release/app-release.apk"
+                  fi
+
+                  echo "android_dir=$ANDROID_DIR" >> "$GITHUB_OUTPUT"
+                  echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+
             - name: Detect optional scripts
               id: script-check
               working-directory: ${{ steps.paths.outputs.app_dir }}
@@ -88,12 +114,12 @@ jobs:
               run: npm test -- --ci
 
             - name: Prepare local.properties
-              working-directory: ${{ steps.paths.outputs.android_dir }}
+              working-directory: ${{ steps.android-paths.outputs.android_dir }}
               run: |
                   echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
             - name: Build App (assembleRelease)
-              working-directory: ${{ steps.paths.outputs.android_dir }}
+              working-directory: ${{ steps.android-paths.outputs.android_dir }}
               env:
                   NODE_ENV: production
               run: |
@@ -101,7 +127,7 @@ jobs:
                   ./gradlew assembleRelease --no-daemon
 
             - name: Verify APK output
-              run: ls -lh "$(dirname '${{ steps.paths.outputs.apk_path }}')"
+              run: ls -lh "$(dirname '${{ steps.android-paths.outputs.apk_path }}')"
 
             - name: Upload Artifact to Firebase App Distribution
               uses: wzieba/Firebase-Distribution-Github-Action@v1
@@ -109,7 +135,7 @@ jobs:
                   appId: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
                   serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
                   groups: ${{ secrets.FIREBASE_TESTER_GROUPS }}
-                  file: ${{ steps.paths.outputs.apk_path }}
+                  file: ${{ steps.android-paths.outputs.apk_path }}
                   releaseNotes: |
                       CI build from commit ${{ github.sha }}
                       Branch: ${{ github.ref_name }}
