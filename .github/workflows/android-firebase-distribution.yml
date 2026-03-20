@@ -19,6 +19,26 @@ jobs:
             - name: Code Push (Checkout)
               uses: actions/checkout@v4
 
+            - name: Detect project paths
+              id: paths
+              run: |
+                  if [ -d "android" ] && [ -f "package.json" ]; then
+                    APP_DIR="."
+                    ANDROID_DIR="android"
+                    APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+                  elif [ -d "bitenex-user/android" ] && [ -f "bitenex-user/package.json" ]; then
+                    APP_DIR="bitenex-user"
+                    ANDROID_DIR="bitenex-user/android"
+                    APK_PATH="bitenex-user/android/app/build/outputs/apk/release/app-release.apk"
+                  else
+                    echo "Cannot locate project paths. Expected either ./android or ./bitenex-user/android" >&2
+                    exit 1
+                  fi
+
+                  echo "app_dir=$APP_DIR" >> "$GITHUB_OUTPUT"
+                  echo "android_dir=$ANDROID_DIR" >> "$GITHUB_OUTPUT"
+                  echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
@@ -39,6 +59,7 @@ jobs:
                   sdkmanager --licenses
 
             - name: Install Dependencies
+              working-directory: ${{ steps.paths.outputs.app_dir }}
               run: |
                   if [ -f package-lock.json ]; then
                     npm ci --include=dev
@@ -49,6 +70,7 @@ jobs:
 
             - name: Detect optional scripts
               id: script-check
+              working-directory: ${{ steps.paths.outputs.app_dir }}
               run: |
                   HAS_LINT=$(node -e "const p=require('./package.json'); process.stdout.write(p.scripts && p.scripts.lint ? 'true' : 'false')")
                   HAS_TEST=$(node -e "const p=require('./package.json'); process.stdout.write(p.scripts && p.scripts.test ? 'true' : 'false')")
@@ -57,19 +79,21 @@ jobs:
 
             - name: Lint (Basic)
               if: steps.script-check.outputs.has_lint == 'true'
+              working-directory: ${{ steps.paths.outputs.app_dir }}
               run: npm run lint
 
             - name: Unit Test (if available)
               if: steps.script-check.outputs.has_test == 'true'
+              working-directory: ${{ steps.paths.outputs.app_dir }}
               run: npm test -- --ci
 
             - name: Prepare local.properties
-              working-directory: android
+              working-directory: ${{ steps.paths.outputs.android_dir }}
               run: |
                   echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
             - name: Build App (assembleRelease)
-              working-directory: android
+              working-directory: ${{ steps.paths.outputs.android_dir }}
               env:
                   NODE_ENV: production
               run: |
@@ -77,7 +101,7 @@ jobs:
                   ./gradlew assembleRelease --no-daemon
 
             - name: Verify APK output
-              run: ls -lh android/app/build/outputs/apk/release
+              run: ls -lh "$(dirname '${{ steps.paths.outputs.apk_path }}')"
 
             - name: Upload Artifact to Firebase App Distribution
               uses: wzieba/Firebase-Distribution-Github-Action@v1
@@ -85,7 +109,7 @@ jobs:
                   appId: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
                   serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
                   groups: ${{ secrets.FIREBASE_TESTER_GROUPS }}
-                  file: android/app/build/outputs/apk/release/app-release.apk
+                  file: ${{ steps.paths.outputs.apk_path }}
                   releaseNotes: |
                       CI build from commit ${{ github.sha }}
                       Branch: ${{ github.ref_name }}
