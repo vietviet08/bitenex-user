@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import { api, setLogoutCallback } from "@/services/api";
+import { pushNotificationService } from "@/services/pushNotifications";
 import { tokenService } from "@/services/tokenService";
 
 export interface User {
@@ -162,6 +163,7 @@ export const useAuthStore = create<AuthState>()(
 
             logout: async () => {
                 try {
+                    await pushNotificationService.unregisterCurrentDevice();
                     const refreshToken = await tokenService.getRefreshToken();
                     if (refreshToken) {
                         await api.post("/auth/logout", {
@@ -171,6 +173,7 @@ export const useAuthStore = create<AuthState>()(
                 } catch {}
 
                 await tokenService.clearTokens();
+                pushNotificationService.stop();
 
                 set({
                     user: null,

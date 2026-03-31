@@ -7,6 +7,7 @@ export { tokenService, TOKEN_KEY, REFRESH_TOKEN_KEY } from './tokenService';
 export { type ApiError, ApiErrorException } from './apiError';
 export { transformError } from './errorHandler';
 export { socketClient, type SocketEvents } from './socket';
+export { pushNotificationService } from './pushNotifications';
 export {
   createOrder,
   getOrderById,

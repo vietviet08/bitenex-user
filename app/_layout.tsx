@@ -10,7 +10,7 @@ import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useAuth } from "@/hooks/useAuth";
-import { socketClient } from "@/services";
+import { pushNotificationService, socketClient } from "@/services";
 import { getHasRehydrated, useAuthStore } from "@/store/zustand/auth.store";
 import {
     startCartActivitySync,
@@ -74,12 +74,15 @@ function RootLayoutNav() {
     useEffect(() => {
         if (isAuthenticated) {
             socketClient.connect();
+            pushNotificationService.start();
             startCartActivitySync();
         } else {
             socketClient.disconnect();
+            pushNotificationService.stop();
             stopCartActivitySync();
         }
         return () => {
+            pushNotificationService.stop();
             stopCartActivitySync();
         };
     }, [isAuthenticated]);
