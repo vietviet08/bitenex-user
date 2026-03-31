@@ -53,3 +53,6 @@ openspec/
 .github/prompts/
 
 AGENTS.md
+
+google-services.json
+GoogleService-Info.plist
