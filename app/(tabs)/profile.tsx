@@ -1,139 +1,152 @@
 import React from "react";
-import { View, ScrollView } from "react-native";
+import { View, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/hooks/useAuth";
 import {
-  ProfileHeader,
-  SettingsSection,
-  SettingsMenuItem,
+    ProfileHeader,
+    SettingsSection,
+    SettingsMenuItem,
 } from "@/components/profile";
 
 // Mock user data
 const MOCK_USER = {
-  name: "Andrew Ainsley",
-  phone: "+1 111 467 378 399",
-  avatarUrl:
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
+    name: "Andrew Ainsley",
+    phone: "+1 111 467 378 399",
+    avatarUrl:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
 };
 
 export default function ProfileScreen() {
-  const handleLogout = () => {
-    // Future: implement logout
-    console.log("Logout pressed");
-  };
+    const { logout } = useAuth();
 
-  return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View className="flex-row items-center gap-3 px-6 py-4">
-          <View className="bg-primary-100 p-1.5 rounded-full">
-            <View className="w-5 h-5 items-center justify-center">
-              <View className="w-3 h-3 bg-primary-500 rounded-full" />
-            </View>
-          </View>
-          <View>
-            <View className="text-2xl font-bold">
-              {/* Profile title handled by ProfileHeader */}
-            </View>
-          </View>
-        </View>
+    const handleLogout = () => {
+        Alert.alert("Logout", "Are you sure you want to log out?", [
+            {
+                text: "Cancel",
+                style: "cancel",
+            },
+            {
+                text: "Logout",
+                style: "destructive",
+                onPress: () => {
+                    logout().catch((err) => {
+                        console.error("Logout failed", err);
+                    });
+                },
+            },
+        ]);
+    };
 
-        {/* Profile Header */}
-        <ProfileHeader
-          avatarUrl={MOCK_USER.avatarUrl}
-          name={MOCK_USER.name}
-          phone={MOCK_USER.phone}
-        />
+    return (
+        <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                {/* Header */}
+                <View className="flex-row items-center gap-3 px-6 py-4">
+                    <View className="bg-primary-100 p-1.5 rounded-full">
+                        <View className="w-5 h-5 items-center justify-center">
+                            <View className="w-3 h-3 bg-primary-500 rounded-full" />
+                        </View>
+                    </View>
+                    <View>
+                        <View className="text-2xl font-bold">
+                            {/* Profile title handled by ProfileHeader */}
+                        </View>
+                    </View>
+                </View>
 
-        {/* Divider */}
-        <View className="h-px bg-gray-100 mx-6 my-4" />
+                {/* Profile Header */}
+                <ProfileHeader
+                    avatarUrl={MOCK_USER.avatarUrl}
+                    name={MOCK_USER.name}
+                    phone={MOCK_USER.phone}
+                />
 
-        {/* Settings Menu */}
-        <View className="px-6">
-          <SettingsSection>
-            <SettingsMenuItem
-              icon="favorite"
-              label="My Favorite Restaurants"
-              href="/profile/favorites"
-            />
-            <SettingsMenuItem
-              icon="local-offer"
-              label="Special Offers & Promo"
-              href="/profile/promos"
-            />
-            <SettingsMenuItem
-              icon="wallet"
-              label="Payment Methods"
-              href="/profile/payment-methods"
-            />
-          </SettingsSection>
+                {/* Divider */}
+                <View className="h-px bg-gray-100 mx-6 my-4" />
 
-          <View className="h-4" />
+                {/* Settings Menu */}
+                <View className="px-6">
+                    <SettingsSection>
+                        <SettingsMenuItem
+                            icon="favorite"
+                            label="My Favorite Restaurants"
+                            href="/profile/favorites"
+                        />
+                        <SettingsMenuItem
+                            icon="local-offer"
+                            label="Special Offers & Promo"
+                            href="/profile/promos"
+                        />
+                        <SettingsMenuItem
+                            icon="wallet"
+                            label="Payment Methods"
+                            href="/profile/payment-methods"
+                        />
+                    </SettingsSection>
 
-          <SettingsSection>
-            <SettingsMenuItem
-              icon="person"
-              label="Profile"
-              href="/profile/edit"
-            />
-            <SettingsMenuItem
-              icon="location-on"
-              label="Address"
-              href="/profile/addresses"
-            />
-            <SettingsMenuItem
-              icon="notifications"
-              label="Notification"
-              href="/profile/notifications"
-            />
-            <SettingsMenuItem
-              icon="security"
-              label="Security"
-              href="/profile/security"
-            />
-          </SettingsSection>
+                    <View className="h-4" />
 
-          <View className="h-4" />
+                    <SettingsSection>
+                        <SettingsMenuItem
+                            icon="person"
+                            label="Profile"
+                            href="/profile/edit"
+                        />
+                        <SettingsMenuItem
+                            icon="location-on"
+                            label="Address"
+                            href="/profile/addresses"
+                        />
+                        <SettingsMenuItem
+                            icon="notifications"
+                            label="Notification"
+                            href="/profile/notifications"
+                        />
+                        <SettingsMenuItem
+                            icon="security"
+                            label="Security"
+                            href="/profile/security"
+                        />
+                    </SettingsSection>
 
-          <SettingsSection>
-            <SettingsMenuItem
-              icon="language"
-              label="Language"
-              href="/profile/language"
-              rightText="English (US)"
-            />
-          </SettingsSection>
+                    <View className="h-4" />
 
-          <View className="h-4" />
+                    <SettingsSection>
+                        <SettingsMenuItem
+                            icon="language"
+                            label="Language"
+                            href="/profile/language"
+                            rightText="English (US)"
+                        />
+                    </SettingsSection>
 
-          <SettingsSection>
-            <SettingsMenuItem
-              icon="info"
-              label="Help Center"
-              href="/profile/help-center"
-            />
-            <SettingsMenuItem
-              icon="people-outline"
-              label="Invite Friends"
-              href="/profile/invite-friends"
-            />
-          </SettingsSection>
+                    <View className="h-4" />
 
-          <View className="h-2" />
+                    <SettingsSection>
+                        <SettingsMenuItem
+                            icon="info"
+                            label="Help Center"
+                            href="/profile/help-center"
+                        />
+                        <SettingsMenuItem
+                            icon="people-outline"
+                            label="Invite Friends"
+                            href="/profile/invite-friends"
+                        />
+                    </SettingsSection>
 
-          <SettingsMenuItem
-            icon="logout"
-            label="Logout"
-            onPress={handleLogout}
-            isDestructive
-          />
-        </View>
+                    <View className="h-2" />
 
-        <View className="h-24" />
-      </ScrollView>
-    </SafeAreaView>
-  );
+                    <SettingsMenuItem
+                        icon="logout"
+                        label="Logout"
+                        onPress={handleLogout}
+                        isDestructive
+                    />
+                </View>
+
+                <View className="h-24" />
+            </ScrollView>
+        </SafeAreaView>
+    );
 }
