@@ -34,8 +34,6 @@ const DELIVERY_TIME_OPTIONS: DeliveryTimeOption[] = [
 ];
 
 const MOCK_ADDRESS = "123 Main Street, Apt 4B\nNew York, NY 10001";
-const MOCK_CARD_TYPE = "VNPAY";
-const MOCK_CARD_LAST_FOUR = "TEST";
 const TAX_RATE = 0.08; // 8% tax
 
 export default function CheckoutScreen() {
@@ -48,6 +46,7 @@ export default function CheckoutScreen() {
 
     // Local state for checkout options
     const [selectedTimeId, setSelectedTimeId] = useState("asap");
+    const [paymentMethod, setPaymentMethod] = useState<"VNPAY" | "CASH">("VNPAY");
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
     // Calculate totals
@@ -65,8 +64,15 @@ export default function CheckoutScreen() {
     }, []);
 
     const handleChangePayment = useCallback(() => {
-        // TODO: Navigate to payment method selection
-        Alert.alert("Change Payment", "Payment method selection coming soon!");
+        Alert.alert(
+            "Select Payment Method",
+            "Choose your preferred payment method",
+            [
+                { text: "VNPAY", onPress: () => setPaymentMethod("VNPAY") },
+                { text: "Cash on Delivery", onPress: () => setPaymentMethod("CASH") },
+                { text: "Cancel", style: "cancel" },
+            ]
+        );
     }, []);
 
     const handlePlaceOrder = useCallback(async () => {
@@ -86,10 +92,18 @@ export default function CheckoutScreen() {
                     order_id: order.id,
                     amount: order.total,
                     currency: "VND",
-                    method: "VNPAY",
+                    method: paymentMethod === "CASH" ? "CASH_ON_DELIVERY" : "VNPAY",
                 },
                 generateIdempotencyKey(`checkout-${order.id}`),
             );
+
+            if (paymentMethod === "CASH") {
+                router.replace({
+                    pathname: "/order/tracking",
+                    params: { orderId: order.id },
+                });
+                return;
+            }
 
             if (!payment.payment_url) {
                 throw new Error("Payment URL was not returned by server.");
@@ -123,7 +137,7 @@ export default function CheckoutScreen() {
         } finally {
             setIsPlacingOrder(false);
         }
-    }, [cartMerchantId, items, setPendingPayment]);
+    }, [cartMerchantId, items, paymentMethod, setPendingPayment]);
 
     return (
         <View className="flex-1 bg-white">
@@ -150,8 +164,7 @@ export default function CheckoutScreen() {
                 <View className="h-2 bg-neutral-100" />
 
                 <PaymentMethodCard
-                    cardType={MOCK_CARD_TYPE}
-                    lastFourDigits={MOCK_CARD_LAST_FOUR}
+                    method={paymentMethod}
                     onChangePayment={handleChangePayment}
                 />
 
