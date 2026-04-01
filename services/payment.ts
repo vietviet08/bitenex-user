@@ -13,7 +13,7 @@ export interface CreatePaymentInput {
     order_id: string;
     amount: number;
     currency?: string;
-    method?: "VNPAY";
+    method?: "VNPAY" | "CASH_ON_DELIVERY";
 }
 
 export interface PaymentResponse {
