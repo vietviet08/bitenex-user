@@ -1,0 +1,6 @@
+projectKey=vietviet08_bitenex-user_AZ1Q77TLOAw2YcbRDWsQ
+serverUrl=https://sonarqube.catcosy.shop
+serverVersion=9.9.8.100196
+dashboardUrl=https://sonarqube.catcosy.shop/dashboard?id=vietviet08_bitenex-user_AZ1Q77TLOAw2YcbRDWsQ
+ceTaskId=AZ1Q9t84OAw2YcbRDWsd
+ceTaskUrl=https://sonarqube.catcosy.shop/api/ce/task?id=AZ1Q9t84OAw2YcbRDWsd
