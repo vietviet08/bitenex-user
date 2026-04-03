@@ -1,0 +1,34 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "es2020",
+        "moduleResolution": "node",
+        "jsx": "react-jsx",
+        "strict": true,
+        "allowJs": true,
+        "checkJs": false,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./*"]
+        }
+    },
+    "include": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.js",
+        "**/*.jsx",
+        "expo-env.d.ts",
+        "nativewind-env.d.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        ".expo",
+        ".scannerwork",
+        "android",
+        "ios",
+        "dist",
+        "build"
+    ]
+}
