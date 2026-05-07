@@ -77,6 +77,7 @@ const MAPPING = {
     send: "send",
     "volume-up": "volume-up",
     "music-off": "music-off",
+    cancel: "cancel",
 } as const satisfies Record<string, MaterialIconName>;
 
 export type IconSymbolName = keyof typeof MAPPING;

@@ -232,7 +232,7 @@ function ResultCard({ item }: ResultCardProps) {
         <MatchScoreBar score={item.match_score} />
       </View>
 
-      <IconSymbol name="chevron.right" size={14} color={colors.text.tertiary} style={{ marginLeft: 4, marginTop: 4 }} />
+      <IconSymbol name="chevron-right" size={14} color={colors.text.tertiary} style={{ marginLeft: 4, marginTop: 4 }} />
     </TouchableOpacity>
   );
 }
@@ -331,7 +331,7 @@ export default function ExploreScreen() {
             isFocused ? 'border border-primary-400' : 'border border-transparent'
           }`}
         >
-          <IconSymbol name="magnifyingglass" size={18} color={colors.text.tertiary} />
+          <IconSymbol name="search" size={18} color={colors.text.tertiary} />
           <TextInput
             ref={inputRef}
             className="flex-1 text-base text-text-primary mx-sm"
@@ -349,7 +349,7 @@ export default function ExploreScreen() {
           {isLoading && <ActivityIndicator size="small" color={colors.primary[500]} />}
           {!isLoading && searchQuery.length > 0 && (
             <TouchableOpacity onPress={handleClear} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <IconSymbol name="xmark.circle.fill" size={18} color={colors.text.tertiary} />
+              <IconSymbol name="cancel" size={18} color={colors.text.tertiary} />
             </TouchableOpacity>
           )}
         </View>
