@@ -3,6 +3,7 @@ import { memo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { colors } from "@/theme";
+import { formatCurrency } from "@/utils/helpers";
 
 interface CheckoutButtonProps {
     readonly total: number;
@@ -40,7 +41,7 @@ export const CheckoutButton = memo(function CheckoutButton({
                         disabled ? "text-neutral-500" : "text-white"
                     }`}
                 >
-                    Proceed to Checkout · ${total.toFixed(2)}
+                    Proceed to Checkout · {formatCurrency(total)}
                 </Text>
             </Pressable>
         </View>

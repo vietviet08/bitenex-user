@@ -1,5 +1,6 @@
 import { View, Text } from "react-native";
 import { memo } from "react";
+import { formatCurrency } from "@/utils/helpers";
 
 interface PriceSummaryProps {
     readonly subtotal: number;
@@ -28,7 +29,7 @@ export const PriceSummary = memo(function PriceSummary({
                 <View className="flex-row justify-between">
                     <Text className="text-base text-neutral-600">Subtotal</Text>
                     <Text className="text-base text-neutral-900">
-                        ${subtotal.toFixed(2)}
+                        {formatCurrency(subtotal)}
                     </Text>
                 </View>
 
@@ -37,7 +38,7 @@ export const PriceSummary = memo(function PriceSummary({
                         Delivery Fee
                     </Text>
                     <Text className="text-base text-neutral-900">
-                        ${deliveryFee.toFixed(2)}
+                        {formatCurrency(deliveryFee)}
                     </Text>
                 </View>
 
@@ -47,7 +48,7 @@ export const PriceSummary = memo(function PriceSummary({
                             Discount ({(discount * 100).toFixed(0)}%)
                         </Text>
                         <Text className="text-base text-primary-600">
-                            -${discountAmount.toFixed(2)}
+                            -{formatCurrency(discountAmount)}
                         </Text>
                     </View>
                 )}
@@ -55,7 +56,7 @@ export const PriceSummary = memo(function PriceSummary({
                 <View className="flex-row justify-between">
                     <Text className="text-base text-neutral-600">Taxes</Text>
                     <Text className="text-base text-neutral-900">
-                        ${taxes.toFixed(2)}
+                        {formatCurrency(taxes)}
                     </Text>
                 </View>
 
@@ -66,7 +67,7 @@ export const PriceSummary = memo(function PriceSummary({
                         Total
                     </Text>
                     <Text className="text-lg font-bold text-neutral-900">
-                        ${total.toFixed(2)}
+                        {formatCurrency(total)}
                     </Text>
                 </View>
             </View>

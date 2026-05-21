@@ -2,6 +2,7 @@ import { View, Text, Pressable } from "react-native";
 import { memo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/theme";
+import { formatCurrency } from "@/utils/helpers";
 
 interface PlaceOrderButtonProps {
     readonly total: number;
@@ -38,7 +39,7 @@ export const PlaceOrderButton = memo(function PlaceOrderButton({
                     className={`font-bold text-base ${isLoading ? "text-neutral-500" : "text-white"
                         }`}
                 >
-                    {isLoading ? "Placing Order..." : `Place Order · $${total.toFixed(2)}`}
+                    {isLoading ? "Placing Order..." : `Place Order · ${formatCurrency(total)}`}
                 </Text>
             </Pressable>
         </View>

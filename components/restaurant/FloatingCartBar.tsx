@@ -1,8 +1,10 @@
 import { View, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { colors } from "@/theme";
+import { formatCurrency } from "@/utils/helpers";
 
 interface FloatingCartBarProps {
     readonly itemCount: number;
@@ -31,6 +33,7 @@ export function FloatingCartBar({ itemCount, total }: FloatingCartBarProps) {
                 }}
             >
                 <Pressable
+                    onPress={() => router.push("/(tabs)/cart")}
                     className="w-full rounded-xl p-4 flex-row items-center justify-between"
                     style={{
                         backgroundColor: colors.primary[500],
@@ -54,7 +57,7 @@ export function FloatingCartBar({ itemCount, total }: FloatingCartBarProps) {
 
                     <View className="flex-row items-center gap-2">
                         <Text className="text-lg font-bold text-white">
-                            ${total.toFixed(2)}
+                            {formatCurrency(total)}
                         </Text>
                         <IconSymbol
                             name="arrow-forward"

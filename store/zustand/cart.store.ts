@@ -44,10 +44,10 @@ interface CartState {
     getItemCount: () => number;
 
     // Actions
-    addItem: (item: Omit<CartItem, "id" | "lineTotal">) => void;
+    addItem: (item: Omit<CartItem, "id" | "lineTotal">, deliveryFee?: number) => void;
     /** Returns true if the cart already has items from a different merchant */
     hasMerchantConflict: (merchantId: string) => boolean;
-    switchMerchantAndAdd: (item: Omit<CartItem, "id" | "lineTotal">) => void;
+    switchMerchantAndAdd: (item: Omit<CartItem, "id" | "lineTotal">, deliveryFee?: number) => void;
     removeItem: (cartItemId: string) => void;
     updateQuantity: (cartItemId: string, quantity: number) => void;
     applyPromo: (code: string) => boolean;
@@ -87,7 +87,7 @@ export const useCartStore = create<CartState>()(
             merchantId: null,
             promoCode: "",
             discount: 0,
-            deliveryFee: 2.99,
+            deliveryFee: 0,
 
             getSubtotal: () => {
                 return get().items.reduce(
@@ -98,9 +98,8 @@ export const useCartStore = create<CartState>()(
 
             getTotal: () => {
                 const subtotal = get().getSubtotal();
-                const discount = get().discount;
                 const deliveryFee = get().deliveryFee;
-                return subtotal - subtotal * discount + deliveryFee;
+                return subtotal + deliveryFee;
             },
 
             getItemCount: () => {
@@ -110,7 +109,7 @@ export const useCartStore = create<CartState>()(
                 );
             },
 
-            addItem: (itemData) => {
+            addItem: (itemData, deliveryFee = 0) => {
                 const newItem: CartItem = {
                     ...itemData,
                     id: generateCartItemId(),
@@ -128,6 +127,7 @@ export const useCartStore = create<CartState>()(
                             : generateCartSessionId(),
                     items: [...state.items, newItem],
                     merchantId: itemData.merchantId,
+                    deliveryFee: state.items.length === 0 ? deliveryFee : state.deliveryFee,
                 }));
             },
 
@@ -140,7 +140,7 @@ export const useCartStore = create<CartState>()(
                 );
             },
 
-            switchMerchantAndAdd: (itemData) => {
+            switchMerchantAndAdd: (itemData, deliveryFee = 0) => {
                 const newItem: CartItem = {
                     ...itemData,
                     id: generateCartItemId(),
@@ -157,6 +157,7 @@ export const useCartStore = create<CartState>()(
                     merchantId: itemData.merchantId,
                     promoCode: "",
                     discount: 0,
+                    deliveryFee: deliveryFee,
                 });
             },
 
@@ -172,6 +173,7 @@ export const useCartStore = create<CartState>()(
                             merchantId: null,
                             promoCode: "",
                             discount: 0,
+                            deliveryFee: 0,
                         };
                     }
 
@@ -225,6 +227,7 @@ export const useCartStore = create<CartState>()(
                     merchantId: null,
                     promoCode: "",
                     discount: 0,
+                    deliveryFee: 0,
                 });
             },
         }),
@@ -237,6 +240,7 @@ export const useCartStore = create<CartState>()(
                 merchantId: state.merchantId,
                 promoCode: state.promoCode,
                 discount: state.discount,
+                deliveryFee: state.deliveryFee,
             }),
         },
     ),

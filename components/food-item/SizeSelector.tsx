@@ -1,6 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import { memo } from "react";
 import { colors } from "@/theme";
+import { formatCurrency } from "@/utils/helpers";
 
 export interface SizeOption {
     readonly id: string;
@@ -60,7 +61,7 @@ export const SizeSelector = memo(function SizeSelector({
                             </View>
                             {size.priceDelta > 0 && (
                                 <Text className="text-base text-neutral-600">
-                                    +${size.priceDelta.toFixed(2)}
+                                    +{formatCurrency(size.priceDelta)}
                                 </Text>
                             )}
                         </Pressable>

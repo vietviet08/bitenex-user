@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
+import { formatCurrency } from "@/utils/helpers";
 import { ScreenHeader } from "@/components/profile";
 import { TipSelector } from "@/components/feedback";
 import { Driver } from "@/components/tracking";
@@ -22,13 +23,6 @@ const MOCK_DRIVER: Driver = {
         color: "Red",
     },
 };
-
-function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat("vi-VN", {
-        style: "currency",
-        currency: "VND",
-    }).format(amount);
-}
 
 export default function TipDriverScreen() {
     const [selectedAmount, setSelectedAmount] = useState<number | null>(null);

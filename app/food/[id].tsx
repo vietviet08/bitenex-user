@@ -17,8 +17,9 @@ import {
 import { useCartStore } from "@/store/zustand/cart.store";
 import {
     fetchMenuItemDetail,
+    fetchMerchantDetail,
     type MenuItemDetailDto,
-    type OptionGroupDto,
+    type MerchantDto,
 } from "@/services/merchant";
 
 export default function FoodItemDetailScreen() {
@@ -29,6 +30,7 @@ export default function FoodItemDetailScreen() {
 
     // Data fetching state
     const [menuItem, setMenuItem] = useState<MenuItemDetailDto | null>(null);
+    const [merchant, setMerchant] = useState<MerchantDto | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
 
@@ -50,8 +52,12 @@ export default function FoodItemDetailScreen() {
         setIsLoading(true);
         setErrorMessage("");
         try {
-            const data = await fetchMenuItemDetail(merchantId, id);
+            const [data, merchantData] = await Promise.all([
+                fetchMenuItemDetail(merchantId, id),
+                fetchMerchantDetail(merchantId),
+            ]);
             setMenuItem(data);
+            setMerchant(merchantData);
 
             // Initialize selections: for "single" groups, pre-select first option
             const initial: Record<string, string[]> = {};
@@ -257,7 +263,7 @@ export default function FoodItemDetailScreen() {
                         text: "Clear & Add",
                         style: "destructive",
                         onPress: () => {
-                            switchMerchantAndAdd(itemData);
+                            switchMerchantAndAdd(itemData, merchant?.delivery_fee ?? 0);
                             showAddedAlert(itemData.name, itemData.quantity);
                         },
                     },
@@ -266,7 +272,7 @@ export default function FoodItemDetailScreen() {
             return;
         }
 
-        addItem(itemData);
+        addItem(itemData, merchant?.delivery_fee ?? 0);
         showAddedAlert(itemData.name, itemData.quantity);
     }, [
         buildCartItemData,
@@ -274,6 +280,7 @@ export default function FoodItemDetailScreen() {
         switchMerchantAndAdd,
         addItem,
         showAddedAlert,
+        merchant,
     ]);
 
     // Bottom sheet setup
