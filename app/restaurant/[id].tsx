@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
+import { formatCurrency } from "@/utils/helpers";
+
 import { FloatingCartBar } from "@/components/restaurant/FloatingCartBar";
+import { useCartStore } from "@/store/zustand/cart.store";
 import { MenuCategoryTabs } from "@/components/restaurant/MenuCategoryTabs";
 import { MenuItem, type MenuItemData } from "@/components/restaurant/MenuItem";
 import { RestaurantHeaderActions } from "@/components/restaurant/RestaurantHeaderActions";
@@ -55,6 +58,14 @@ function groupByCategory(items: MenuItemData[]): MenuSection[] {
 export default function RestaurantDetailScreen() {
     const params = useLocalSearchParams<{ id?: string }>();
     const merchantId = typeof params.id === "string" ? params.id : "";
+
+    const cartMerchantId = useCartStore((state) => state.merchantId);
+    const cartItemCount = useCartStore((state) => state.getItemCount());
+    const cartTotal = useCartStore((state) => state.getTotal());
+
+    const isCurrentMerchant = cartMerchantId === merchantId;
+    const finalItemCount = isCurrentMerchant ? cartItemCount : 0;
+    const finalTotal = isCurrentMerchant ? cartTotal : 0;
 
     const [merchant, setMerchant] = useState<MerchantDto | null>(null);
     const [menuItems, setMenuItems] = useState<MenuItemData[]>([]);
@@ -118,13 +129,13 @@ export default function RestaurantDetailScreen() {
         {
             id: "delivery",
             icon: "local-shipping",
-            text: `Delivery fee $${merchant?.delivery_fee.toFixed(2) ?? "0.00"}`,
+            text: `Delivery: ${formatCurrency(merchant?.delivery_fee ?? 0)}`,
             variant: "primary",
         },
         {
             id: "minimum",
             icon: "local-offer",
-            text: `Min order $${merchant?.min_order_amount.toFixed(2) ?? "0.00"}`,
+            text: `Min order: ${formatCurrency(merchant?.min_order_amount ?? 0)}`,
             variant: "red",
         },
     ];
@@ -220,7 +231,7 @@ export default function RestaurantDetailScreen() {
                 ) : null}
             </ScrollView>
 
-            <FloatingCartBar itemCount={0} total={0} />
+            <FloatingCartBar itemCount={finalItemCount} total={finalTotal} />
         </View>
     );
 }

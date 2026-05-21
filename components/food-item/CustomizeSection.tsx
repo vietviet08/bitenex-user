@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from "react-native";
 import { memo } from "react";
+import { formatCurrency } from "@/utils/helpers";
 
 export interface AddOnOption {
     readonly id: string;
@@ -58,7 +59,7 @@ export const CustomizeSection = memo(function CustomizeSection({
                                 </Text>
                             </View>
                             <Text className="text-base text-neutral-600">
-                                +${addOn.price.toFixed(2)}
+                                +{formatCurrency(addOn.price)}
                             </Text>
                         </Pressable>
                     );

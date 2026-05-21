@@ -1,4 +1,5 @@
 import { View, Text } from "react-native";
+import { formatCurrency } from "@/utils/helpers";
 
 interface FoodItemInfoProps {
     readonly name: string;
@@ -12,7 +13,7 @@ export function FoodItemInfo({ name, description, price }: FoodItemInfoProps) {
             <Text className="text-2xl font-bold text-neutral-900">{name}</Text>
             <Text className="text-base text-neutral-600 mt-2">{description}</Text>
             <Text className="text-xl font-bold text-primary-500 mt-3">
-                ${price.toFixed(2)}
+                {formatCurrency(price)}
             </Text>
         </View>
     );

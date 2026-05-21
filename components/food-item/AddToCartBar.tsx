@@ -3,6 +3,7 @@ import { memo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { colors } from "@/theme";
+import { formatCurrency } from "@/utils/helpers";
 
 interface AddToCartBarProps {
     readonly quantity: number;
@@ -79,7 +80,7 @@ export const AddToCartBar = memo(function AddToCartBar({
                 }}
             >
                 <Text className="text-white font-bold text-base">
-                    Add to Cart · ${totalPrice.toFixed(2)}
+                    Add to Cart · {formatCurrency(totalPrice)}
                 </Text>
             </Pressable>
         </View>

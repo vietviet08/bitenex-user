@@ -4,6 +4,7 @@ import { Image } from "expo-image";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { colors } from "@/theme";
 import type { CartItem as CartItemType } from "@/store/zustand/cart.store";
+import { formatCurrency } from "@/utils/helpers";
 
 interface CartItemProps {
     readonly item: CartItemType;
@@ -62,7 +63,7 @@ export const CartItem = memo(function CartItem({
                         </Text>
                     )}
                     <Text className="text-sm text-neutral-600 mt-1">
-                        ${basePrice.toFixed(2)} each
+                        {formatCurrency(basePrice)} each
                     </Text>
                 </View>
 
@@ -102,7 +103,7 @@ export const CartItem = memo(function CartItem({
                         </Pressable>
                     </View>
                     <Text className="text-base font-bold text-neutral-900">
-                        ${lineTotal.toFixed(2)}
+                        {formatCurrency(lineTotal)}
                     </Text>
                 </View>
             </View>

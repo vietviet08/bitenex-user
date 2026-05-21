@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { OrderStatusBadge, type OrderStatus } from "./OrderStatusBadge";
+import { formatCurrency } from "@/utils/helpers";
 
 export interface Order {
     id: string;
@@ -70,7 +71,7 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
 
                     <View className="flex-row items-center justify-between mt-2">
                         <Text className="text-lg font-bold text-primary-500">
-                            ${order.price.toFixed(2)}
+                            {formatCurrency(order.price)}
                         </Text>
                         <OrderStatusBadge status={order.status} />
                     </View>

@@ -1,6 +1,6 @@
 projectKey=vietviet08_bitenex-user_AZ1R4VTxkDnbqzWlKWTJ
-serverUrl=https://sonarqube.catcosy.shop
+serverUrl=https://sonarqube.vietnq.online
 serverVersion=9.9.8.100196
-dashboardUrl=https://sonarqube.catcosy.shop/dashboard?id=vietviet08_bitenex-user_AZ1R4VTxkDnbqzWlKWTJ
+dashboardUrl=https://sonarqube.vietnq.online/dashboard?id=vietviet08_bitenex-user_AZ1R4VTxkDnbqzWlKWTJ
 ceTaskId=AZ1R4hr3kDnbqzWlKWTV
-ceTaskUrl=https://sonarqube.catcosy.shop/api/ce/task?id=AZ1R4hr3kDnbqzWlKWTV
+ceTaskUrl=https://sonarqube.vietnq.online/api/ce/task?id=AZ1R4hr3kDnbqzWlKWTV

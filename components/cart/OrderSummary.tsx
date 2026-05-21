@@ -1,5 +1,6 @@
 import { View, Text } from "react-native";
 import { memo } from "react";
+import { formatCurrency } from "@/utils/helpers";
 
 interface OrderSummaryProps {
     readonly subtotal: number;
@@ -26,7 +27,7 @@ export const OrderSummary = memo(function OrderSummary({
                 <View className="flex-row justify-between">
                     <Text className="text-base text-neutral-600">Subtotal</Text>
                     <Text className="text-base text-neutral-900">
-                        ${subtotal.toFixed(2)}
+                        {formatCurrency(subtotal)}
                     </Text>
                 </View>
 
@@ -35,7 +36,7 @@ export const OrderSummary = memo(function OrderSummary({
                         Delivery Fee
                     </Text>
                     <Text className="text-base text-neutral-900">
-                        ${deliveryFee.toFixed(2)}
+                        {formatCurrency(deliveryFee)}
                     </Text>
                 </View>
 
@@ -45,7 +46,7 @@ export const OrderSummary = memo(function OrderSummary({
                             Discount ({(discount * 100).toFixed(0)}%)
                         </Text>
                         <Text className="text-base text-primary-600">
-                            -${discountAmount.toFixed(2)}
+                            -{formatCurrency(discountAmount)}
                         </Text>
                     </View>
                 )}
@@ -57,7 +58,7 @@ export const OrderSummary = memo(function OrderSummary({
                         Total
                     </Text>
                     <Text className="text-lg font-bold text-neutral-900">
-                        ${total.toFixed(2)}
+                        {formatCurrency(total)}
                     </Text>
                 </View>
             </View>

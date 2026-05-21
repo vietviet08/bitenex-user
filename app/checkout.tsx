@@ -34,7 +34,6 @@ const DELIVERY_TIME_OPTIONS: DeliveryTimeOption[] = [
 ];
 
 const MOCK_ADDRESS = "123 Main Street, Apt 4B\nNew York, NY 10001";
-const TAX_RATE = 0.08; // 8% tax
 
 export default function CheckoutScreen() {
     const items = useCartItems();
@@ -50,9 +49,8 @@ export default function CheckoutScreen() {
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
     // Calculate totals
-    const discountAmount = subtotal * discount;
-    const taxes = (subtotal - discountAmount) * TAX_RATE;
-    const total = subtotal - discountAmount + deliveryFee + taxes;
+    const taxes = 0;
+    const total = subtotal + deliveryFee;
 
     const handleSelectTime = useCallback((id: string) => {
         setSelectedTimeId(id);

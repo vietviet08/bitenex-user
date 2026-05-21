@@ -3,6 +3,7 @@ import { memo, useState } from "react";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { colors } from "@/theme";
 import type { CartItem } from "@/store/zustand/cart.store";
+import { formatCurrency } from "@/utils/helpers";
 
 interface OrderItemsSummaryProps {
     readonly items: CartItem[];
@@ -49,7 +50,7 @@ export const OrderItemsSummary = memo(function OrderItemsSummary({
                                 </Text>
                             </View>
                             <Text className="text-base text-neutral-900">
-                                ${item.lineTotal.toFixed(2)}
+                                {formatCurrency(item.lineTotal)}
                             </Text>
                         </View>
                     ))}

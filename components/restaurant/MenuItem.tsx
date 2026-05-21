@@ -4,6 +4,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { colors } from "@/theme";
+import { formatCurrency } from "@/utils/helpers";
 
 export type MenuItemData = {
     id: string;
@@ -51,7 +52,7 @@ export const MenuItem = memo(function MenuItem({ item }: MenuItemProps) {
                 </View>
                 <View className="mt-3">
                     <Text className="text-lg font-bold text-neutral-900">
-                        ${item.price.toFixed(2)}
+                        {formatCurrency(item.price)}
                     </Text>
                 </View>
             </View>
