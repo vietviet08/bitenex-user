@@ -61,6 +61,24 @@ export interface OrderListResponse {
     total: number;
 }
 
+export interface OrderTrackingResponse {
+    order_id: string;
+    order_number: string;
+    status: string;
+    merchant_id: string;
+    merchant_name: string;
+    pickup_address: string;
+    pickup_latitude: number | null;
+    pickup_longitude: number | null;
+    delivery_address: string;
+    delivery_latitude: number | null;
+    delivery_longitude: number | null;
+    driver_id: string | null;
+    driver_latitude: number | null;
+    driver_longitude: number | null;
+    updated_at: string | null;
+}
+
 /**
  * Maps cart items to the `OrderItemInput[]` format expected by the API.
  */
@@ -86,6 +104,11 @@ export async function createOrder(payload: CreateOrderInput): Promise<OrderRespo
 
 export async function getOrderById(orderId: string): Promise<OrderResponse> {
     const response = await api.get<OrderResponse>(`/orders/${orderId}`);
+    return response.data;
+}
+
+export async function getOrderTracking(orderId: string): Promise<OrderTrackingResponse> {
+    const response = await api.get<OrderTrackingResponse>(`/orders/${orderId}/tracking`);
     return response.data;
 }
 

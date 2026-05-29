@@ -6,11 +6,13 @@ import { colors } from "@/theme";
 interface DeliveryAddressCardProps {
     readonly address: string;
     readonly onEdit?: () => void;
+    readonly actionLabel?: string;
 }
 
 export const DeliveryAddressCard = memo(function DeliveryAddressCard({
     address,
     onEdit,
+    actionLabel = "Edit",
 }: DeliveryAddressCardProps) {
     return (
         <View className="px-4 py-4">
@@ -21,7 +23,7 @@ export const DeliveryAddressCard = memo(function DeliveryAddressCard({
                 {onEdit && (
                     <Pressable onPress={onEdit}>
                         <Text className="text-sm font-medium text-primary-500">
-                            Edit
+                            {actionLabel}
                         </Text>
                     </Pressable>
                 )}

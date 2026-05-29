@@ -6,18 +6,25 @@ export { api, setLogoutCallback } from './api';
 export { tokenService, TOKEN_KEY, REFRESH_TOKEN_KEY } from './tokenService';
 export { type ApiError, ApiErrorException } from './apiError';
 export { transformError } from './errorHandler';
-export { socketClient, type SocketEvents } from './socket';
+export {
+  socketClient,
+  type DriverLocationData,
+  type OrderStatusEventData,
+  type SocketEvents,
+} from './socket';
 export { pushNotificationService } from './pushNotifications';
 export {
   createOrder,
   getMyOrders,
   getOrderById,
+  getOrderTracking,
   cartItemsToOrderItems,
   type CreateOrderInput,
   type OrderListResponse,
   type OrderItemInput,
   type OrderItemResponse,
   type OrderResponse,
+  type OrderTrackingResponse,
 } from './order';
 export {
   createPayment,
