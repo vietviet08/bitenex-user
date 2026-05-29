@@ -45,7 +45,7 @@ export default function CheckoutScreen() {
 
     // Local state for checkout options
     const [selectedTimeId, setSelectedTimeId] = useState("asap");
-    const [paymentMethod, setPaymentMethod] = useState<"VNPAY" | "CASH">("VNPAY");
+    const [paymentMethod, setPaymentMethod] = useState<"VNPAY" | "CASH">("CASH");
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
     // Calculate totals

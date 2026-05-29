@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import { tokenService } from './tokenService';
 
 const SOCKET_URL =
-    process.env.EXPO_PUBLIC_WEBSOCKET_URL;
+    process.env.EXPO_PUBLIC_SOCKET_URL ?? process.env.EXPO_PUBLIC_WEBSOCKET_URL;
 
 export interface SocketEvents {
   connect: () => void;
@@ -28,15 +28,19 @@ export interface OrderEventData {
 }
 
 export interface OrderStatusEventData {
-  orderId: string;
-  previousStatus: string;
-  newStatus: string;
+  orderId?: string;
+  order_id?: string;
+  previousStatus?: string;
+  newStatus?: string;
+  status?: string;
   timestamp: string;
 }
 
 export interface DriverLocationData {
-  driverId: string;
-  orderId: string;
+  driverId?: string;
+  driver_id?: string;
+  orderId?: string;
+  order_id?: string;
   latitude: number;
   longitude: number;
   heading?: number;
