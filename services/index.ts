@@ -10,9 +10,11 @@ export { socketClient, type SocketEvents } from './socket';
 export { pushNotificationService } from './pushNotifications';
 export {
   createOrder,
+  getMyOrders,
   getOrderById,
   cartItemsToOrderItems,
   type CreateOrderInput,
+  type OrderListResponse,
   type OrderItemInput,
   type OrderItemResponse,
   type OrderResponse,

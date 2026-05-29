@@ -7,9 +7,16 @@ import { EmptyOrdersState } from "./EmptyOrdersState";
 interface OrdersListProps {
     readonly orders: readonly Order[];
     readonly variant: "active" | "completed" | "cancelled";
+    readonly refreshing?: boolean;
+    readonly onRefresh?: () => void;
 }
 
-function OrdersListComponent({ orders, variant }: OrdersListProps) {
+function OrdersListComponent({
+    orders,
+    variant,
+    refreshing = false,
+    onRefresh,
+}: OrdersListProps) {
     const renderItem = useCallback(
         ({ item }: { item: Order }) => (
             <OrderCard order={item} variant={variant} />
@@ -30,6 +37,8 @@ function OrdersListComponent({ orders, variant }: OrdersListProps) {
                 renderItem={renderItem}
                 keyExtractor={keyExtractor}
                 contentContainerStyle={{ paddingVertical: 16 }}
+                refreshing={refreshing}
+                onRefresh={onRefresh}
                 showsVerticalScrollIndicator={false}
             />
         </View>
