@@ -20,6 +20,7 @@ import {
     useDeliveryFee,
 } from "@/store/zustand/cart.store";
 import { usePaymentStore } from "@/store/zustand/payment.store";
+import { useDeliveryLocation } from "@/store/zustand/checkout.store";
 import { createOrder, cartItemsToOrderItems } from "@/services/order";
 import {
     createPayment,
@@ -33,8 +34,6 @@ const DELIVERY_TIME_OPTIONS: DeliveryTimeOption[] = [
     { id: "schedule", label: "Schedule for later", sublabel: "Choose a time" },
 ];
 
-const MOCK_ADDRESS = "123 Main Street, Apt 4B\nNew York, NY 10001";
-
 export default function CheckoutScreen() {
     const items = useCartItems();
     const subtotal = useCartSubtotal();
@@ -42,6 +41,7 @@ export default function CheckoutScreen() {
     const deliveryFee = useDeliveryFee();
     const cartMerchantId = useCartStore((state) => state.merchantId);
     const setPendingPayment = usePaymentStore((state) => state.setPendingPayment);
+    const deliveryLocation = useDeliveryLocation();
 
     // Local state for checkout options
     const [selectedTimeId, setSelectedTimeId] = useState("asap");
@@ -57,8 +57,7 @@ export default function CheckoutScreen() {
     }, []);
 
     const handleEditAddress = useCallback(() => {
-        // TODO: Navigate to address selection
-        Alert.alert("Edit Address", "Address selection coming soon!");
+        router.push("/checkout/address-picker");
     }, []);
 
     const handleChangePayment = useCallback(() => {
@@ -75,12 +74,22 @@ export default function CheckoutScreen() {
 
     const handlePlaceOrder = useCallback(async () => {
         if (!cartMerchantId || items.length === 0) return;
+        if (!deliveryLocation) {
+            Alert.alert(
+                "Delivery Address Required",
+                "Please choose your delivery location on the map before placing the order.",
+            );
+            router.push("/checkout/address-picker");
+            return;
+        }
 
         setIsPlacingOrder(true);
         try {
             const order = await createOrder({
                 merchant_id: cartMerchantId,
-                delivery_address: MOCK_ADDRESS,
+                delivery_address: deliveryLocation.address,
+                delivery_latitude: deliveryLocation.latitude,
+                delivery_longitude: deliveryLocation.longitude,
                 customer_note: undefined,
                 items: cartItemsToOrderItems(items),
             });
@@ -135,7 +144,7 @@ export default function CheckoutScreen() {
         } finally {
             setIsPlacingOrder(false);
         }
-    }, [cartMerchantId, items, paymentMethod, setPendingPayment]);
+    }, [cartMerchantId, deliveryLocation, items, paymentMethod, setPendingPayment]);
 
     return (
         <View className="flex-1 bg-white">
@@ -147,7 +156,11 @@ export default function CheckoutScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 <DeliveryAddressCard
-                    address={MOCK_ADDRESS}
+                    address={
+                        deliveryLocation?.address ??
+                        "Choose your delivery location on the map"
+                    }
+                    actionLabel={deliveryLocation ? "Edit" : "Choose"}
                     onEdit={handleEditAddress}
                 />
 

@@ -171,6 +171,14 @@ function RootLayoutNav() {
                 />
 
                 <Stack.Screen
+                    name="checkout/address-picker"
+                    options={{
+                        headerShown: false,
+                        animation: "slide_from_bottom",
+                    }}
+                />
+
+                <Stack.Screen
                     name="order/payment-processing"
                     options={{
                         headerShown: false,
