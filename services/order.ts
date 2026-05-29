@@ -74,6 +74,10 @@ export interface OrderTrackingResponse {
     delivery_latitude: number | null;
     delivery_longitude: number | null;
     driver_id: string | null;
+    driver_name: string | null;
+    driver_avatar_url: string | null;
+    driver_average_rating: number | null;
+    driver_total_deliveries: number | null;
     driver_latitude: number | null;
     driver_longitude: number | null;
     updated_at: string | null;
@@ -109,6 +113,29 @@ export async function getOrderById(orderId: string): Promise<OrderResponse> {
 
 export async function getOrderTracking(orderId: string): Promise<OrderTrackingResponse> {
     const response = await api.get<OrderTrackingResponse>(`/orders/${orderId}/tracking`);
+    return response.data;
+}
+
+export async function cancelOrder(orderId: string, reason: string): Promise<OrderResponse> {
+    const response = await api.post<OrderResponse>(`/orders/${orderId}/cancel`, null, {
+        params: { reason },
+    });
+    return response.data;
+}
+
+export async function rateOrderDriver(
+    orderId: string,
+    payload: { rating: number; comment?: string; tip_amount?: number },
+): Promise<OrderResponse> {
+    const response = await api.post<OrderResponse>(`/orders/${orderId}/rate-driver`, payload);
+    return response.data;
+}
+
+export async function rateOrderMerchant(
+    orderId: string,
+    payload: { rating: number; comment?: string },
+): Promise<OrderResponse> {
+    const response = await api.post<OrderResponse>(`/orders/${orderId}/rate-merchant`, payload);
     return response.data;
 }
 

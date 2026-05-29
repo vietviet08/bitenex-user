@@ -22,6 +22,11 @@ interface OrderCardProps {
 }
 
 function OrderCardComponent({ order, variant }: OrderCardProps) {
+    const canCancel =
+        order.status === "PENDING" || order.status === "CONFIRMED";
+    const canTrack =
+        order.status === "PICKING_UP" || order.status === "DELIVERING";
+
     const handleCancelOrder = () => {
         router.push({
             pathname: "/orders/cancel",
@@ -81,20 +86,29 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
             {/* Action Buttons */}
             {variant === "active" && (
                 <View className="flex-row gap-3 mt-4">
-                    <Pressable
-                        onPress={handleCancelOrder}
-                        className="flex-1 py-3 rounded-full bg-primary-500/10 items-center active:opacity-80"
-                    >
-                        <Text className="text-primary-500 font-semibold">
-                            Cancel Order
-                        </Text>
-                    </Pressable>
+                    {canCancel && (
+                        <Pressable
+                            onPress={handleCancelOrder}
+                            className="flex-1 py-3 rounded-full bg-primary-500/10 items-center active:opacity-80"
+                        >
+                            <Text className="text-primary-500 font-semibold">
+                                Cancel Order
+                            </Text>
+                        </Pressable>
+                    )}
                     <Pressable
                         onPress={handleTrackDriver}
-                        className="flex-1 py-3 rounded-full bg-primary-500 items-center active:opacity-80"
+                        disabled={!canTrack}
+                        className={`flex-1 py-3 rounded-full items-center active:opacity-80 ${
+                            canTrack ? "bg-primary-500" : "bg-gray-200"
+                        }`}
                     >
-                        <Text className="text-white font-semibold">
-                            Track Driver
+                        <Text
+                            className={`font-semibold ${
+                                canTrack ? "text-white" : "text-text-secondary"
+                            }`}
+                        >
+                            {canTrack ? "Track Driver" : "Waiting"}
                         </Text>
                     </Pressable>
                 </View>

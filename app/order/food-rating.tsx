@@ -1,19 +1,18 @@
-import React, { useState } from "react";
-import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, View, Text, Pressable, TextInput, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
 import { ScreenHeader } from "@/components/profile";
 import { StarRating } from "@/components/feedback";
-
-// Mock data - API ready
-const MOCK_RESTAURANT = {
-    id: "restaurant-1",
-    name: "Burger Hub",
-    imageUrl:
-        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
-    cuisine: "American, Burgers",
-};
+import {
+    fetchMerchantDetail,
+    getOrderById,
+    rateOrderDriver,
+    rateOrderMerchant,
+    type MerchantDto,
+    type OrderResponse,
+} from "@/services";
 
 const getRatingMessage = (rating: number): string => {
     switch (rating) {
@@ -35,32 +34,76 @@ const getRatingMessage = (rating: number): string => {
 export default function FoodRatingScreen() {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState("");
+    const [order, setOrder] = useState<OrderResponse | null>(null);
+    const [merchant, setMerchant] = useState<MerchantDto | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const params = useLocalSearchParams<{
         orderId?: string;
         mood?: string;
         driverRating?: string;
+        driverComment?: string;
         tip?: string;
     }>();
 
-    const handleSubmit = () => {
-        // Submit all feedback data
-        console.log("Feedback submitted:", {
-            orderId: params.orderId,
-            mood: params.mood,
-            driverRating: params.driverRating,
-            tip: params.tip,
-            restaurantRating: rating,
-            restaurantComment: comment,
+    const loadOrder = useCallback(async () => {
+        if (!params.orderId) {
+            setIsLoading(false);
+            return;
+        }
+        try {
+            const orderData = await getOrderById(params.orderId);
+            setOrder(orderData);
+            setMerchant(await fetchMerchantDetail(orderData.merchant_id));
+        } finally {
+            setIsLoading(false);
+        }
+    }, [params.orderId]);
+
+    useEffect(() => {
+        void loadOrder();
+    }, [loadOrder]);
+
+    const submitDriverRatingIfAny = async () => {
+        if (!params.orderId || !params.driverRating) return;
+        const driverRating = Number(params.driverRating);
+        if (!Number.isFinite(driverRating) || driverRating < 1) return;
+        await rateOrderDriver(params.orderId, {
+            rating: driverRating,
+            comment: params.driverComment || undefined,
+            tip_amount: params.tip ? Number(params.tip) : 0,
         });
+    };
 
-        // Navigate back to home/orders
+    const handleSubmit = async () => {
+        if (!params.orderId || rating === 0) return;
+        setIsSubmitting(true);
+        try {
+            await submitDriverRatingIfAny();
+            await rateOrderMerchant(params.orderId, {
+                rating,
+                comment: comment || undefined,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
         router.replace("/(tabs)");
     };
 
-    const handleSkip = () => {
-        // Navigate back to home/orders without rating
+    const handleSkip = async () => {
+        setIsSubmitting(true);
+        try {
+            await submitDriverRatingIfAny();
+        } finally {
+            setIsSubmitting(false);
+        }
         router.replace("/(tabs)");
     };
+
+    const merchantImage =
+        merchant?.cover_image_url ||
+        merchant?.logo_url ||
+        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400";
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
@@ -73,16 +116,20 @@ export default function FoodRatingScreen() {
             >
                 {/* Restaurant Info */}
                 <View className="items-center mb-6">
-                    <Image
-                        source={{ uri: MOCK_RESTAURANT.imageUrl }}
-                        style={{ width: 100, height: 100, borderRadius: 20 }}
-                        contentFit="cover"
-                    />
+                    {isLoading ? (
+                        <ActivityIndicator size="large" color="#FE8C00" />
+                    ) : (
+                        <Image
+                            source={{ uri: merchantImage }}
+                            style={{ width: 100, height: 100, borderRadius: 20 }}
+                            contentFit="cover"
+                        />
+                    )}
                     <Text className="text-xl font-bold text-text-primary mt-4">
-                        {MOCK_RESTAURANT.name}
+                        {merchant?.name ?? "Restaurant"}
                     </Text>
                     <Text className="text-sm text-text-secondary mt-1">
-                        {MOCK_RESTAURANT.cuisine}
+                        {order?.order_number ?? "Delivered order"}
                     </Text>
                 </View>
 
@@ -134,24 +181,25 @@ export default function FoodRatingScreen() {
             <View className="px-6 pb-6">
                 <Pressable
                     onPress={handleSubmit}
-                    disabled={rating === 0}
+                    disabled={rating === 0 || isSubmitting}
                     className={`py-4 rounded-xl items-center mb-3 ${
-                        rating > 0
+                        rating > 0 && !isSubmitting
                             ? "bg-primary-500 active:bg-primary-600"
                             : "bg-gray-300"
                     }`}
                 >
                     <Text
                         className={`font-bold text-lg ${
-                            rating > 0 ? "text-white" : "text-gray-500"
+                            rating > 0 && !isSubmitting ? "text-white" : "text-gray-500"
                         }`}
                     >
-                        Submit Review
+                        {isSubmitting ? "Submitting..." : "Submit Review"}
                     </Text>
                 </Pressable>
 
                 <Pressable
                     onPress={handleSkip}
+                    disabled={isSubmitting}
                     className="py-3 rounded-xl items-center"
                 >
                     <Text className="text-text-secondary font-semibold">
