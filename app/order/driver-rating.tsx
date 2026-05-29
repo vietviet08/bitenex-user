@@ -1,27 +1,11 @@
-import React, { useState } from "react";
-import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, View, Text, Pressable, TextInput, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
 import { ScreenHeader } from "@/components/profile";
 import { StarRating } from "@/components/feedback";
-import { Driver } from "@/components/tracking";
-
-// Mock data - API ready
-const MOCK_DRIVER: Driver = {
-    id: "driver-1",
-    name: "John Smith",
-    avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
-    rating: 4.8,
-    totalDeliveries: 156,
-    phone: "+84 912 345 678",
-    vehicle: {
-        type: "Motorcycle",
-        model: "Honda Wave",
-        plate: "59H1-12345",
-        color: "Red",
-    },
-};
+import { getOrderTracking, type OrderTrackingResponse } from "@/services";
 
 const getRatingLabel = (rating: number): string => {
     if (rating === 5) return "Excellent!";
@@ -34,16 +18,34 @@ const getRatingLabel = (rating: number): string => {
 export default function DriverRatingScreen() {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState("");
+    const [tracking, setTracking] = useState<OrderTrackingResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const params = useLocalSearchParams<{ orderId?: string; mood?: string }>();
 
+    const loadTracking = useCallback(async () => {
+        if (!params.orderId) {
+            setIsLoading(false);
+            return;
+        }
+        try {
+            setTracking(await getOrderTracking(params.orderId));
+        } finally {
+            setIsLoading(false);
+        }
+    }, [params.orderId]);
+
+    useEffect(() => {
+        void loadTracking();
+    }, [loadTracking]);
+
     const handleSubmit = () => {
-        // Save rating data
         router.push({
             pathname: "/order/tip-driver",
             params: {
                 orderId: params.orderId,
                 mood: params.mood,
                 driverRating: rating.toString(),
+                driverComment: comment,
             },
         });
     };
@@ -54,6 +56,9 @@ export default function DriverRatingScreen() {
             params: { orderId: params.orderId, mood: params.mood },
         });
     };
+
+    const driverName = tracking?.driver_name ?? "Your driver";
+    const driverAvatar = tracking?.driver_avatar_url;
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
@@ -66,16 +71,28 @@ export default function DriverRatingScreen() {
             >
                 {/* Driver Avatar */}
                 <View className="items-center mb-6">
-                    <Image
-                        source={{ uri: MOCK_DRIVER.avatarUrl }}
-                        style={{ width: 100, height: 100, borderRadius: 50 }}
-                        contentFit="cover"
-                    />
+                    {isLoading ? (
+                        <ActivityIndicator size="large" color="#FE8C00" />
+                    ) : driverAvatar ? (
+                        <Image
+                            source={{ uri: driverAvatar }}
+                            style={{ width: 100, height: 100, borderRadius: 50 }}
+                            contentFit="cover"
+                        />
+                    ) : (
+                        <View className="w-[100px] h-[100px] rounded-full bg-primary-100 items-center justify-center">
+                            <Text className="text-primary-600 text-4xl font-bold">
+                                {driverName.charAt(0).toUpperCase()}
+                            </Text>
+                        </View>
+                    )}
                     <Text className="text-xl font-bold text-text-primary mt-4">
-                        {MOCK_DRIVER.name}
+                        {driverName}
                     </Text>
                     <Text className="text-sm text-text-secondary mt-1">
-                        Your delivery driver
+                        {tracking?.driver_average_rating
+                            ? `${tracking.driver_average_rating.toFixed(1)} rating`
+                            : "Your delivery driver"}
                     </Text>
                 </View>
 

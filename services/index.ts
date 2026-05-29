@@ -19,6 +19,8 @@ export {
   getMyOrders,
   getOrderById,
   getOrderTracking,
+  rateOrderDriver,
+  rateOrderMerchant,
   cartItemsToOrderItems,
   type CreateOrderInput,
   type OrderListResponse,

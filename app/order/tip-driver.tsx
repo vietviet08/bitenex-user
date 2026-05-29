@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -6,31 +6,26 @@ import { Image } from "expo-image";
 import { formatCurrency } from "@/utils/helpers";
 import { ScreenHeader } from "@/components/profile";
 import { TipSelector } from "@/components/feedback";
-import { Driver } from "@/components/tracking";
-
-// Mock data - API ready
-const MOCK_DRIVER: Driver = {
-    id: "driver-1",
-    name: "John Smith",
-    avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
-    rating: 4.8,
-    totalDeliveries: 156,
-    phone: "+84 912 345 678",
-    vehicle: {
-        type: "Motorcycle",
-        model: "Honda Wave",
-        plate: "59H1-12345",
-        color: "Red",
-    },
-};
+import { getOrderTracking, type OrderTrackingResponse } from "@/services";
 
 export default function TipDriverScreen() {
     const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+    const [tracking, setTracking] = useState<OrderTrackingResponse | null>(null);
     const params = useLocalSearchParams<{
         orderId?: string;
         mood?: string;
         driverRating?: string;
+        driverComment?: string;
     }>();
+
+    const loadTracking = useCallback(async () => {
+        if (!params.orderId) return;
+        setTracking(await getOrderTracking(params.orderId));
+    }, [params.orderId]);
+
+    useEffect(() => {
+        void loadTracking();
+    }, [loadTracking]);
 
     const handleSendTip = () => {
         // Process tip
@@ -40,6 +35,7 @@ export default function TipDriverScreen() {
                 orderId: params.orderId,
                 mood: params.mood,
                 driverRating: params.driverRating,
+                driverComment: params.driverComment,
                 tip: selectedAmount?.toString(),
             },
         });
@@ -52,9 +48,13 @@ export default function TipDriverScreen() {
                 orderId: params.orderId,
                 mood: params.mood,
                 driverRating: params.driverRating,
+                driverComment: params.driverComment,
             },
         });
     };
+
+    const driverName = tracking?.driver_name ?? "Your driver";
+    const driverAvatar = tracking?.driver_avatar_url;
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
@@ -66,13 +66,21 @@ export default function TipDriverScreen() {
             >
                 {/* Driver Card */}
                 <View className="bg-white rounded-2xl p-6 shadow-sm items-center mb-6">
-                    <Image
-                        source={{ uri: MOCK_DRIVER.avatarUrl }}
-                        style={{ width: 80, height: 80, borderRadius: 40 }}
-                        contentFit="cover"
-                    />
+                    {driverAvatar ? (
+                        <Image
+                            source={{ uri: driverAvatar }}
+                            style={{ width: 80, height: 80, borderRadius: 40 }}
+                            contentFit="cover"
+                        />
+                    ) : (
+                        <View className="w-20 h-20 rounded-full bg-primary-100 items-center justify-center">
+                            <Text className="text-primary-600 text-3xl font-bold">
+                                {driverName.charAt(0).toUpperCase()}
+                            </Text>
+                        </View>
+                    )}
                     <Text className="text-lg font-bold text-text-primary mt-3">
-                        {MOCK_DRIVER.name}
+                        {driverName}
                     </Text>
                     <Text className="text-sm text-text-secondary mt-1">
                         Delivered your order safely
