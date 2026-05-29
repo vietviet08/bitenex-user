@@ -56,6 +56,11 @@ export interface OrderResponse {
     updated_at: string;
 }
 
+export interface OrderListResponse {
+    items: OrderResponse[];
+    total: number;
+}
+
 /**
  * Maps cart items to the `OrderItemInput[]` format expected by the API.
  */
@@ -81,5 +86,16 @@ export async function createOrder(payload: CreateOrderInput): Promise<OrderRespo
 
 export async function getOrderById(orderId: string): Promise<OrderResponse> {
     const response = await api.get<OrderResponse>(`/orders/${orderId}`);
+    return response.data;
+}
+
+export async function getMyOrders(params?: {
+    status?: string;
+    page?: number;
+    per_page?: number;
+}): Promise<OrderListResponse> {
+    const response = await api.get<OrderListResponse>("/orders/my", {
+        params,
+    });
     return response.data;
 }
