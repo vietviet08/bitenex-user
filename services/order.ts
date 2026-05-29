@@ -112,6 +112,13 @@ export async function getOrderTracking(orderId: string): Promise<OrderTrackingRe
     return response.data;
 }
 
+export async function cancelOrder(orderId: string, reason: string): Promise<OrderResponse> {
+    const response = await api.post<OrderResponse>(`/orders/${orderId}/cancel`, null, {
+        params: { reason },
+    });
+    return response.data;
+}
+
 export async function getMyOrders(params?: {
     status?: string;
     page?: number;

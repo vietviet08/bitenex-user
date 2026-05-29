@@ -15,6 +15,7 @@ export {
 export { pushNotificationService } from './pushNotifications';
 export {
   createOrder,
+  cancelOrder,
   getMyOrders,
   getOrderById,
   getOrderTracking,

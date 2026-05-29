@@ -1,5 +1,5 @@
 import React, { memo, useState } from "react";
-import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
+import { ActivityIndicator, View, Text, Pressable, TextInput, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -17,11 +17,13 @@ const CANCELLATION_REASONS = [
 
 interface CancellationReasonModalProps {
     orderId?: string;
-    onSubmit?: (reason: string, otherReason?: string) => void;
+    isSubmitting?: boolean;
+    onSubmit?: (reason: string, otherReason?: string) => void | Promise<void>;
 }
 
 function CancellationReasonModalComponent({
     orderId,
+    isSubmitting = false,
     onSubmit,
 }: Readonly<CancellationReasonModalProps>) {
     const insets = useSafeAreaInsets();
@@ -33,8 +35,8 @@ function CancellationReasonModalComponent({
         router.back();
     };
 
-    const handleSubmit = () => {
-        onSubmit?.(selectedReason, otherReason);
+    const handleSubmit = async () => {
+        await onSubmit?.(selectedReason, otherReason);
         router.back();
     };
 
@@ -116,9 +118,16 @@ function CancellationReasonModalComponent({
             >
                 <Pressable
                     onPress={handleSubmit}
-                    className="w-full bg-primary-500 py-4 rounded-full items-center active:opacity-80 shadow-lg"
+                    disabled={isSubmitting}
+                    className={`w-full bg-primary-500 py-4 rounded-full items-center active:opacity-80 shadow-lg ${
+                        isSubmitting ? "opacity-60" : ""
+                    }`}
                 >
-                    <Text className="text-white font-bold text-lg">Submit</Text>
+                    {isSubmitting ? (
+                        <ActivityIndicator color="#ffffff" />
+                    ) : (
+                        <Text className="text-white font-bold text-lg">Submit</Text>
+                    )}
                 </Pressable>
             </View>
         </View>
