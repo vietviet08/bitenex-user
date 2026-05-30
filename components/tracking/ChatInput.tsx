@@ -1,5 +1,6 @@
 import React, { memo, useState, useCallback } from "react";
 import { View, TextInput, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 interface ChatInputProps {
@@ -14,6 +15,7 @@ function ChatInputComponent({
     disabled = false,
 }: ChatInputProps) {
     const [message, setMessage] = useState("");
+    const insets = useSafeAreaInsets();
 
     const handleSend = useCallback(() => {
         if (!disabled && message.trim()) {
@@ -23,17 +25,21 @@ function ChatInputComponent({
     }, [disabled, message, onSend]);
 
     return (
-        <View className="flex-row items-end gap-2 px-4 py-3 bg-white border-t border-gray-100">
-            <View className="flex-1 flex-row items-center bg-gray-100 rounded-full px-4 py-2">
+        <View
+            className="flex-row items-center gap-2 px-4 pt-3 bg-white border-t border-gray-100"
+            style={{ paddingBottom: Math.max(insets.bottom, 10) }}
+        >
+            <View className="flex-1 flex-row items-center bg-gray-100 rounded-2xl px-4 py-2 min-h-11">
                 <TextInput
                     value={message}
                     onChangeText={setMessage}
                     placeholder={placeholder}
                     placeholderTextColor="#9ca3af"
-                    className="flex-1 text-[15px] text-text-primary max-h-24"
+                    className="flex-1 text-[15px] text-text-primary max-h-24 py-0"
                     multiline
                     onSubmitEditing={handleSend}
                     editable={!disabled}
+                    textAlignVertical="center"
                 />
             </View>
             <Pressable

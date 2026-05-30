@@ -6,7 +6,7 @@ import { WebView } from "react-native-webview";
 
 import { DeliverySuccessModal } from "@/components/feedback";
 import { ScreenHeader } from "@/components/profile";
-import { TrackingTimeline } from "@/components/tracking";
+import { TrackingTimeline } from "@/components/tracking/TrackingTimeline";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
     getOrderTracking,

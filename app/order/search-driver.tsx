@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ScreenHeader } from "@/components/profile";
-import { SearchRadar } from "@/components/tracking";
+import { SearchRadar } from "@/components/tracking/SearchRadar";
 import { getOrderTracking, type OrderTrackingResponse } from "@/services";
 
 const POLL_MS = 5000;

@@ -5,7 +5,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FlashList, FlashListRef } from "@shopify/flash-list";
 
-import { ChatBubble, ChatInput, Message } from "@/components/tracking";
+import { ChatBubble, type Message } from "@/components/tracking/ChatBubble";
+import { ChatInput } from "@/components/tracking/ChatInput";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
     getOrderChatMessages,
@@ -133,7 +134,11 @@ export default function ChatScreen() {
                     <ActivityIndicator size="large" color="#ff6b35" />
                 </View>
             ) : (
-                <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
+                <KeyboardAvoidingView
+                    className="flex-1"
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    keyboardVerticalOffset={0}
+                >
                     <View className="flex-1 px-4 pt-4">
                         {bubbleData.length === 0 ? (
                             <View className="flex-1 items-center justify-center px-6">
