@@ -240,9 +240,17 @@ export default function PaymentResultScreen() {
     }, [order, orderIdFromParams, payment?.order_id, pendingPayment?.orderId, setPendingPayment]);
 
     const handleTrackOrder = useCallback(() => {
+        const orderId = payment?.order_id || order?.id || pendingPayment?.orderId || orderIdFromParams;
         clearPendingPayment();
-        router.replace("/order/search-driver");
-    }, [clearPendingPayment]);
+        if (!orderId) {
+            router.replace("/(tabs)/orders");
+            return;
+        }
+        router.replace({
+            pathname: "/order/tracking",
+            params: { orderId },
+        });
+    }, [clearPendingPayment, order?.id, orderIdFromParams, payment?.order_id, pendingPayment?.orderId]);
 
     return (
         <SafeAreaView className="flex-1 bg-white">

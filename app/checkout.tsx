@@ -28,7 +28,7 @@ import {
     type PaymentResponse,
 } from "@/services/payment";
 
-// Mock data
+// Static checkout options
 const DELIVERY_TIME_OPTIONS: DeliveryTimeOption[] = [
     { id: "asap", label: "ASAP", sublabel: "30-45 minutes" },
     { id: "schedule", label: "Schedule for later", sublabel: "Choose a time" },
@@ -42,6 +42,7 @@ export default function CheckoutScreen() {
     const cartMerchantId = useCartStore((state) => state.merchantId);
     const setPendingPayment = usePaymentStore((state) => state.setPendingPayment);
     const deliveryLocation = useDeliveryLocation();
+    const clearCart = useCartStore((state) => state.clearCart);
 
     // Local state for checkout options
     const [selectedTimeId, setSelectedTimeId] = useState("asap");
@@ -105,6 +106,7 @@ export default function CheckoutScreen() {
             );
 
             if (paymentMethod === "CASH") {
+                clearCart();
                 router.replace({
                     pathname: "/order/tracking",
                     params: { orderId: order.id },
@@ -144,7 +146,7 @@ export default function CheckoutScreen() {
         } finally {
             setIsPlacingOrder(false);
         }
-    }, [cartMerchantId, deliveryLocation, items, paymentMethod, setPendingPayment]);
+    }, [cartMerchantId, clearCart, deliveryLocation, items, paymentMethod, setPendingPayment]);
 
     return (
         <View className="flex-1 bg-white">

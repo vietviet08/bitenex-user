@@ -1,23 +1,22 @@
 import React, { useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { DeliverySuccessModal } from "@/components/feedback";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-// Mock data - API ready
-const MOCK_ORDER = {
-    orderId: "ORD-123456",
-    deliveryTime: "12:45 PM",
-};
+import { DeliverySuccessModal } from "@/components/feedback";
 
 export default function DeliverySuccessScreen() {
     const [showModal, setShowModal] = useState(true);
-    const params = useLocalSearchParams<{ orderId?: string }>();
+    const params = useLocalSearchParams<{ orderId?: string; orderNumber?: string }>();
 
     const handleConfirm = () => {
         setShowModal(false);
-        router.push({
+        if (!params.orderId) {
+            router.replace("/(tabs)/orders");
+            return;
+        }
+        router.replace({
             pathname: "/order/driver-rating",
-            params: { orderId: params.orderId || MOCK_ORDER.orderId },
+            params: { orderId: params.orderId },
         });
     };
 
@@ -27,8 +26,11 @@ export default function DeliverySuccessScreen() {
                 visible={showModal}
                 onConfirm={handleConfirm}
                 orderInfo={{
-                    orderId: params.orderId || MOCK_ORDER.orderId,
-                    deliveryTime: MOCK_ORDER.deliveryTime,
+                    orderId: params.orderNumber ?? params.orderId ?? "",
+                    deliveryTime: new Date().toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    }),
                 }}
             />
         </SafeAreaView>

@@ -1,118 +1,124 @@
-import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { Image } from "expo-image";
+
 import { ScreenHeader } from "@/components/profile";
-import { DriverCard, Driver } from "@/components/tracking";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { getOrderTracking, type OrderTrackingResponse } from "@/services";
 
-// Mock data - API ready interface
-const MOCK_DRIVER: Driver = {
-    id: "driver-1",
-    name: "John Smith",
-    avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
-    rating: 4.8,
-    totalDeliveries: 156,
-    phone: "+84 912 345 678",
-    vehicle: {
-        type: "Motorcycle",
-        model: "Honda Wave",
-        plate: "59H1-12345",
-        color: "Red",
-    },
-};
-
-const MOCK_REVIEWS = [
-    { id: "1", rating: 5, text: "Very fast delivery!", date: "2 days ago" },
-    { id: "2", rating: 5, text: "Friendly driver", date: "1 week ago" },
-    { id: "3", rating: 4, text: "Good service", date: "2 weeks ago" },
-];
+function formatRating(rating?: number | null): string {
+    if (typeof rating !== "number" || rating <= 0) return "Chưa có";
+    return rating.toFixed(1);
+}
 
 export default function DriverProfileScreen() {
-    const handleChatPress = () => {
-        router.push("/order/chat");
+    const { orderId } = useLocalSearchParams<{ orderId?: string }>();
+    const [tracking, setTracking] = useState<OrderTrackingResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const loadTracking = useCallback(async () => {
+        if (!orderId) {
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            setTracking(await getOrderTracking(orderId));
+        } finally {
+            setIsLoading(false);
+        }
+    }, [orderId]);
+
+    useEffect(() => {
+        loadTracking();
+    }, [loadTracking]);
+
+    const openChat = () => {
+        if (!orderId) return;
+        router.push({ pathname: "/order/chat", params: { orderId } });
     };
 
-    const handleCallPress = () => {
-        router.push("/order/call");
+    const openCall = () => {
+        if (!orderId) return;
+        router.push({ pathname: "/order/call", params: { orderId } });
     };
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
             <ScreenHeader title="Driver Profile" />
-
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                {/* Driver Info */}
-                <View className="px-4 pt-4">
-                    <DriverCard
-                        driver={MOCK_DRIVER}
-                        variant="expanded"
-                        onChatPress={handleChatPress}
-                        onCallPress={handleCallPress}
-                    />
+            {isLoading ? (
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator size="large" color="#ff6b35" />
                 </View>
-
-                {/* Stats */}
-                <View className="flex-row px-4 mt-4 gap-3">
-                    <View className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm">
-                        <Text className="text-2xl font-bold text-primary-500">
-                            {MOCK_DRIVER.rating}
-                        </Text>
-                        <Text className="text-sm text-text-secondary">
-                            Rating
-                        </Text>
-                    </View>
-                    <View className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm">
-                        <Text className="text-2xl font-bold text-primary-500">
-                            {MOCK_DRIVER.totalDeliveries}
-                        </Text>
-                        <Text className="text-sm text-text-secondary">
-                            Deliveries
-                        </Text>
-                    </View>
-                    <View className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm">
-                        <Text className="text-2xl font-bold text-primary-500">
-                            2
-                        </Text>
-                        <Text className="text-sm text-text-secondary">
-                            Years
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Recent Reviews */}
-                <View className="bg-white mx-4 mt-4 mb-6 p-4 rounded-2xl shadow-sm">
-                    <Text className="font-bold text-lg text-text-primary mb-4">
-                        Recent Reviews
-                    </Text>
-                    {MOCK_REVIEWS.map((review) => (
-                        <View
-                            key={review.id}
-                            className="flex-row gap-3 py-3 border-b border-gray-100 last:border-b-0"
-                        >
-                            <View className="flex-row items-center gap-1">
-                                <IconSymbol
-                                    name="star"
-                                    size={16}
-                                    color="#f59e0b"
-                                />
-                                <Text className="font-semibold text-text-primary">
-                                    {review.rating}
-                                </Text>
+            ) : (
+                <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                    <View className="bg-white mx-4 mt-4 rounded-2xl p-5 shadow-sm">
+                        <View className="flex-row items-center gap-4">
+                            <View className="w-16 h-16 rounded-full bg-blue-100 items-center justify-center">
+                                <IconSymbol name="person" size={30} color="#2563eb" />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-text-primary">
-                                    {review.text}
+                                <Text className="text-xl font-bold text-text-primary">
+                                    {tracking?.driver_name ?? "Đang chờ tài xế"}
                                 </Text>
-                                <Text className="text-xs text-text-secondary mt-1">
-                                    {review.date}
+                                <Text className="text-sm text-text-secondary mt-1">
+                                    {tracking?.driver_id
+                                        ? "Tài xế thật được gán cho đơn hàng này"
+                                        : "Chưa có tài xế nhận đơn"}
                                 </Text>
                             </View>
                         </View>
-                    ))}
-                </View>
-            </ScrollView>
+
+                        <View className="flex-row gap-3 mt-5">
+                            <Pressable
+                                onPress={openChat}
+                                disabled={!tracking?.driver_id}
+                                className={`flex-1 py-3 rounded-xl items-center ${
+                                    tracking?.driver_id ? "bg-primary-500" : "bg-gray-200"
+                                }`}
+                            >
+                                <Text className={tracking?.driver_id ? "text-white font-semibold" : "text-text-secondary font-semibold"}>
+                                    Chat
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={openCall}
+                                disabled={!tracking?.driver_id}
+                                className={`flex-1 py-3 rounded-xl items-center ${
+                                    tracking?.driver_id ? "bg-primary-500/10" : "bg-gray-200"
+                                }`}
+                            >
+                                <Text className="text-primary-500 font-semibold">Call</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+
+                    <View className="flex-row px-4 mt-4 gap-3">
+                        <View className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm">
+                            <Text className="text-2xl font-bold text-primary-500">
+                                {formatRating(tracking?.driver_average_rating)}
+                            </Text>
+                            <Text className="text-sm text-text-secondary">Rating</Text>
+                        </View>
+                        <View className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm">
+                            <Text className="text-2xl font-bold text-primary-500">
+                                {tracking?.driver_total_deliveries ?? 0}
+                            </Text>
+                            <Text className="text-sm text-text-secondary">Deliveries</Text>
+                        </View>
+                    </View>
+
+                    <View className="bg-white mx-4 mt-4 mb-6 p-4 rounded-2xl shadow-sm">
+                        <Text className="font-bold text-lg text-text-primary mb-2">
+                            Current Order
+                        </Text>
+                        <Text className="text-text-secondary">
+                            {tracking?.order_number ?? orderId ?? "Unknown order"}
+                        </Text>
+                    </View>
+                </ScrollView>
+            )}
         </SafeAreaView>
     );
 }
