@@ -1,32 +1,27 @@
 import type { FirebaseMessagingTypes } from "@react-native-firebase/messaging";
+import Constants from "expo-constants";
 import * as Linking from "expo-linking";
-import * as Notifications from "expo-notifications";
 import { NativeModules, Platform } from "react-native";
 
-import api from "./api";
+import { api } from "./api";
 
 const isNativeMobile = Platform.OS === "ios" || Platform.OS === "android";
+const isExpoGo = Constants.appOwnership === "expo";
 const isPushFeatureEnabled =
     process.env.EXPO_PUBLIC_ENABLE_FIREBASE_PUSH === "true";
 type MessagingModule = typeof import("@react-native-firebase/messaging").default;
-
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-    }),
-});
+type NotificationsModule = typeof import("expo-notifications");
+type NotificationSubscription = { remove: () => void };
 
 class PushNotificationService {
     private started = false;
     private tokenRefreshUnsubscribe: (() => void) | null = null;
     private openedAppUnsubscribe: (() => void) | null = null;
     private foregroundUnsubscribe: (() => void) | null = null;
-    private notificationResponseSubscription: Notifications.EventSubscription | null =
+    private notificationResponseSubscription: NotificationSubscription | null =
         null;
     private hasLoggedUnavailable = false;
+    private notificationHandlerConfigured = false;
 
     start(): void {
         if (!isNativeMobile || this.started || !this.isMessagingAvailable()) {
@@ -53,18 +48,23 @@ class PushNotificationService {
             },
         );
 
-        this.notificationResponseSubscription =
-            Notifications.addNotificationResponseReceivedListener((response) => {
+        const notifications = this.getNotifications();
+        if (notifications) {
+            this.notificationResponseSubscription =
+                notifications.addNotificationResponseReceivedListener((response) => {
                 const deepLink =
                     response.notification.request.content.data?.deepLink;
                 if (typeof deepLink === "string" && deepLink.length > 0) {
                     void Linking.openURL(deepLink);
                 }
             });
+        }
 
         this.foregroundUnsubscribe = messaging().onMessage(async (message) => {
             const title = message.notification?.title ?? "Bitenex";
             const body = message.notification?.body ?? "Bạn có thông báo mới.";
+
+            const foregroundNotifications = this.getNotifications();
 
             console.log("[Push] Foreground message received:", {
                 messageId: message.messageId,
@@ -73,7 +73,11 @@ class PushNotificationService {
                 data: message.data,
             });
 
-            await Notifications.scheduleNotificationAsync({
+            if (!foregroundNotifications) {
+                return;
+            }
+
+            await foregroundNotifications.scheduleNotificationAsync({
                 content: {
                     title,
                     body,
@@ -194,9 +198,14 @@ class PushNotificationService {
             return;
         }
 
-        await Notifications.setNotificationChannelAsync("default", {
+        const notifications = this.getNotifications();
+        if (!notifications) {
+            return;
+        }
+
+        await notifications.setNotificationChannelAsync("default", {
             name: "Default",
-            importance: Notifications.AndroidImportance.MAX,
+            importance: notifications.AndroidImportance.MAX,
             vibrationPattern: [0, 250, 250, 250],
             lightColor: "#FF6B35",
         });
@@ -207,7 +216,7 @@ class PushNotificationService {
     }
 
     private getMessaging(): MessagingModule | null {
-        if (!isNativeMobile || !isPushFeatureEnabled) {
+        if (!isNativeMobile || !isPushFeatureEnabled || isExpoGo) {
             return null;
         }
 
@@ -223,6 +232,7 @@ class PushNotificationService {
         }
 
         try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const messagingModule = require("@react-native-firebase/messaging");
             const messaging = messagingModule?.default;
 
@@ -236,6 +246,39 @@ class PushNotificationService {
                 this.hasLoggedUnavailable = true;
                 console.warn(
                     `[Push] Firebase Messaging native module is unavailable: ${String(error)}`,
+                );
+            }
+            return null;
+        }
+    }
+
+    private getNotifications(): NotificationsModule | null {
+        if (!isNativeMobile || isExpoGo) {
+            return null;
+        }
+
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const notifications = require("expo-notifications") as NotificationsModule;
+
+            if (!this.notificationHandlerConfigured) {
+                notifications.setNotificationHandler({
+                    handleNotification: async () => ({
+                        shouldShowBanner: true,
+                        shouldShowList: true,
+                        shouldPlaySound: true,
+                        shouldSetBadge: false,
+                    }),
+                });
+                this.notificationHandlerConfigured = true;
+            }
+
+            return notifications;
+        } catch (error) {
+            if (!this.hasLoggedUnavailable) {
+                this.hasLoggedUnavailable = true;
+                console.warn(
+                    `[Push] Expo notifications are unavailable: ${String(error)}`,
                 );
             }
             return null;

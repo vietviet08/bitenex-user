@@ -57,10 +57,16 @@ export interface DriverAssignedData {
 }
 
 export interface ChatMessageData {
-  messageId: string;
-  senderId: string;
+  id: string;
+  order_id: string;
+  conversation_type: 'USER_DRIVER' | 'MERCHANT_DRIVER';
+  sender_user_id: string;
+  sender_role: 'USER' | 'DRIVER' | 'MERCHANT' | 'ADMIN';
+  sender_name: string | null;
+  sender_avatar_url: string | null;
   content: string;
-  timestamp: string;
+  message_type: 'text';
+  created_at: string;
 }
 
 export interface NotificationData {
