@@ -14,6 +14,8 @@ export interface Order {
     price: number;
     status: OrderStatus;
     createdAt: string;
+    hasDriverReview: boolean;
+    hasMerchantReview: boolean;
 }
 
 interface OrderCardProps {
@@ -26,6 +28,9 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
         order.status === "PENDING" || order.status === "CONFIRMED";
     const canTrack =
         order.status === "PICKING_UP" || order.status === "DELIVERING";
+    const needsDriverReview = !order.hasDriverReview;
+    const needsMerchantReview = !order.hasMerchantReview;
+    const needsAnyReview = needsDriverReview || needsMerchantReview;
 
     const handleCancelOrder = () => {
         router.push({
@@ -49,6 +54,14 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
     };
 
     const handleLeaveReview = () => {
+        if (!needsDriverReview && needsMerchantReview) {
+            router.push({
+                pathname: "/order/food-rating",
+                params: { orderId: order.id },
+            });
+            return;
+        }
+
         router.push({
             pathname: "/order/driver-rating",
             params: { orderId: order.id },
@@ -131,16 +144,26 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
                 </Pressable>
             )}
 
-            {variant === "completed" && (
+            {variant === "completed" && needsAnyReview && (
                 <View className="flex-row gap-3 mt-4">
                     <Pressable
                         onPress={handleLeaveReview}
                         className="flex-1 py-3 rounded-full bg-primary-500/10 items-center active:opacity-80"
                     >
                         <Text className="text-primary-500 font-semibold">
-                            Leave a Review
+                            {needsDriverReview && needsMerchantReview
+                                ? "Leave a Review"
+                                : "Complete Review"}
                         </Text>
                     </Pressable>
+                </View>
+            )}
+
+            {variant === "completed" && !needsAnyReview && (
+                <View className="mt-4 py-3 rounded-full bg-gray-100 items-center">
+                    <Text className="text-text-secondary font-semibold">
+                        Reviewed
+                    </Text>
                 </View>
             )}
         </View>

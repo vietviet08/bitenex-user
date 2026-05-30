@@ -52,6 +52,8 @@ export interface OrderResponse {
     estimated_prep_time: number | null;
     estimated_delivery_time: number | null;
     items: OrderItemResponse[];
+    has_driver_review?: boolean;
+    has_merchant_review?: boolean;
     created_at: string;
     updated_at: string;
 }
