@@ -41,6 +41,13 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
         });
     };
 
+    const handleChatDriver = () => {
+        router.push({
+            pathname: "/order/chat",
+            params: { orderId: order.id },
+        });
+    };
+
     const handleLeaveReview = () => {
         router.push({
             pathname: "/order/driver-rating",
@@ -111,6 +118,17 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
                         </Text>
                     </Pressable>
                 </View>
+            )}
+
+            {variant === "active" && canTrack && (
+                <Pressable
+                    onPress={handleChatDriver}
+                    className="mt-3 py-3 rounded-full bg-primary-500/10 items-center active:opacity-80"
+                >
+                    <Text className="text-primary-500 font-semibold">
+                        Chat tài xế
+                    </Text>
+                </Pressable>
             )}
 
             {variant === "completed" && (

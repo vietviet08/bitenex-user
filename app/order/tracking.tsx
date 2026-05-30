@@ -391,6 +391,22 @@ export default function TrackingScreen() {
                             </Text>
                         </View>
                     </View>
+                    {tracking.driver_id ? (
+                        <Pressable
+                            onPress={() =>
+                                router.push({
+                                    pathname: "/order/chat",
+                                    params: { orderId },
+                                })
+                            }
+                            className="mt-4 bg-primary-500/10 rounded-xl py-3 flex-row items-center justify-center active:opacity-80"
+                        >
+                            <IconSymbol name="chat" size={18} color="#ff6b35" />
+                            <Text className="text-primary-500 font-semibold ml-2">
+                                Chat với tài xế
+                            </Text>
+                        </Pressable>
+                    ) : null}
                 </View>
 
                 <View className="bg-white mx-4 mt-4 p-4 rounded-2xl shadow-sm">

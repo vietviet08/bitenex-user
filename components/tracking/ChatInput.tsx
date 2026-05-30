@@ -5,20 +5,22 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 interface ChatInputProps {
     readonly onSend: (message: string) => void;
     readonly placeholder?: string;
+    readonly disabled?: boolean;
 }
 
 function ChatInputComponent({
     onSend,
     placeholder = "Type a message...",
+    disabled = false,
 }: ChatInputProps) {
     const [message, setMessage] = useState("");
 
     const handleSend = useCallback(() => {
-        if (message.trim()) {
+        if (!disabled && message.trim()) {
             onSend(message.trim());
             setMessage("");
         }
-    }, [message, onSend]);
+    }, [disabled, message, onSend]);
 
     return (
         <View className="flex-row items-end gap-2 px-4 py-3 bg-white border-t border-gray-100">
@@ -31,11 +33,13 @@ function ChatInputComponent({
                     className="flex-1 text-[15px] text-text-primary max-h-24"
                     multiline
                     onSubmitEditing={handleSend}
+                    editable={!disabled}
                 />
             </View>
             <Pressable
                 onPress={handleSend}
-                className={`w-11 h-11 rounded-full items-center justify-center ${message.trim()
+                disabled={disabled || !message.trim()}
+                className={`w-11 h-11 rounded-full items-center justify-center ${message.trim() && !disabled
                         ? "bg-primary-500 active:bg-primary-600"
                         : "bg-gray-200"
                     }`}
@@ -43,7 +47,7 @@ function ChatInputComponent({
                 <IconSymbol
                     name="send"
                     size={20}
-                    color={message.trim() ? "#ffffff" : "#9ca3af"}
+                    color={message.trim() && !disabled ? "#ffffff" : "#9ca3af"}
                 />
             </Pressable>
         </View>

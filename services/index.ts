@@ -38,6 +38,13 @@ export {
   type PaymentResponse,
   type PaymentStatus,
 } from './payment';
+export {
+  getOrderChatMessages,
+  sendOrderChatMessage,
+  type ChatConversationType,
+  type ChatMessage,
+  type ChatMessageListResponse,
+} from './chat';
 export { locationService, type Coordinates, type LocationWithDetails, type AddressDetails } from './location';
 export {
   syncMyCartActivity,
