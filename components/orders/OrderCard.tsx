@@ -42,11 +42,10 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
     };
 
     const handleLeaveReview = () => {
-        // Future: Navigate to review screen
-    };
-
-    const handleOrderAgain = () => {
-        // Future: Add items to cart
+        router.push({
+            pathname: "/order/driver-rating",
+            params: { orderId: order.id },
+        });
     };
 
     return (
@@ -122,14 +121,6 @@ function OrderCardComponent({ order, variant }: OrderCardProps) {
                     >
                         <Text className="text-primary-500 font-semibold">
                             Leave a Review
-                        </Text>
-                    </Pressable>
-                    <Pressable
-                        onPress={handleOrderAgain}
-                        className="flex-1 py-3 rounded-full bg-primary-500 items-center active:opacity-80"
-                    >
-                        <Text className="text-white font-semibold">
-                            Order Again
                         </Text>
                     </Pressable>
                 </View>

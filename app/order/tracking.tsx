@@ -100,6 +100,13 @@ function getTrackingMode(status: string): string {
     return "Restaurant is preparing your order";
 }
 
+function formatDriverRating(rating?: number | null): string {
+    if (typeof rating !== "number" || Number.isNaN(rating) || rating <= 0) {
+        return "Chưa có đánh giá";
+    }
+    return `${rating.toFixed(1)} sao`;
+}
+
 function buildMapHtml({
     driver,
     destination,
@@ -365,12 +372,22 @@ export default function TrackingScreen() {
                         </View>
                         <View className="flex-1">
                             <Text className="font-semibold text-text-primary">
-                                {tracking.driver_id ? "Assigned driver" : "Waiting for driver"}
+                                {tracking.driver_name ??
+                                    (tracking.driver_id ? "Tài xế đã nhận đơn" : "Đang chờ tài xế")}
                             </Text>
                             <Text className="text-sm text-text-secondary mt-0.5">
+                                {tracking.driver_id
+                                    ? `${formatDriverRating(tracking.driver_average_rating)}${
+                                          tracking.driver_total_deliveries
+                                              ? ` • ${tracking.driver_total_deliveries} chuyến`
+                                              : ""
+                                      }`
+                                    : "Vị trí sẽ hiển thị sau khi tài xế nhận đơn."}
+                            </Text>
+                            <Text className="text-xs text-text-secondary mt-1">
                                 {driverLocation
-                                    ? "Live GPS is updating from the driver app."
-                                    : "Location appears after the driver accepts and goes online."}
+                                    ? "GPS trực tiếp đang cập nhật từ app tài xế."
+                                    : "Chưa có vị trí GPS trực tiếp."}
                             </Text>
                         </View>
                     </View>
