@@ -43,7 +43,6 @@ export default function FoodRatingScreen() {
         mood?: string;
         driverRating?: string;
         driverComment?: string;
-        tip?: string;
     }>();
 
     const loadOrder = useCallback(async () => {
@@ -71,7 +70,7 @@ export default function FoodRatingScreen() {
         await rateOrderDriver(params.orderId, {
             rating: driverRating,
             comment: params.driverComment || undefined,
-            tip_amount: params.tip ? Number(params.tip) : 0,
+            tip_amount: 0,
         });
     };
 
