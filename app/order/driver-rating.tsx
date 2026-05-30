@@ -40,7 +40,7 @@ export default function DriverRatingScreen() {
 
     const handleSubmit = () => {
         router.push({
-            pathname: "/order/tip-driver",
+            pathname: "/order/food-rating",
             params: {
                 orderId: params.orderId,
                 mood: params.mood,
@@ -52,7 +52,7 @@ export default function DriverRatingScreen() {
 
     const handleSkip = () => {
         router.push({
-            pathname: "/order/tip-driver",
+            pathname: "/order/food-rating",
             params: { orderId: params.orderId, mood: params.mood },
         });
     };
