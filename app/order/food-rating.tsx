@@ -63,8 +63,19 @@ export default function FoodRatingScreen() {
         void loadOrder();
     }, [loadOrder]);
 
+    useEffect(() => {
+        if (isLoading || !order?.has_merchant_review) {
+            return;
+        }
+
+        if (!params.driverRating || order.has_driver_review) {
+            router.replace("/(tabs)/orders");
+        }
+    }, [isLoading, order?.has_driver_review, order?.has_merchant_review, params.driverRating]);
+
     const submitDriverRatingIfAny = async () => {
         if (!params.orderId || !params.driverRating) return;
+        if (order?.has_driver_review) return;
         const driverRating = Number(params.driverRating);
         if (!Number.isFinite(driverRating) || driverRating < 1) return;
         await rateOrderDriver(params.orderId, {
@@ -79,10 +90,12 @@ export default function FoodRatingScreen() {
         setIsSubmitting(true);
         try {
             await submitDriverRatingIfAny();
-            await rateOrderMerchant(params.orderId, {
-                rating,
-                comment: comment || undefined,
-            });
+            if (!order?.has_merchant_review) {
+                await rateOrderMerchant(params.orderId, {
+                    rating,
+                    comment: comment || undefined,
+                });
+            }
         } finally {
             setIsSubmitting(false);
         }

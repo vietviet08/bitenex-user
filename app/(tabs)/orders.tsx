@@ -48,6 +48,8 @@ function toOrderCard(order: OrderResponse, merchant?: MerchantDto): Order {
         price: order.total,
         status: isKnownOrderStatus(order.status) ? order.status : "PENDING",
         createdAt: order.created_at,
+        hasDriverReview: order.has_driver_review ?? false,
+        hasMerchantReview: order.has_merchant_review ?? false,
     };
 }
 

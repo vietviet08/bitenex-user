@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
 import { ScreenHeader } from "@/components/profile";
 import { StarRating } from "@/components/feedback";
-import { getOrderTracking, type OrderTrackingResponse } from "@/services";
+import { getOrderById, getOrderTracking, type OrderResponse, type OrderTrackingResponse } from "@/services";
 
 const getRatingLabel = (rating: number): string => {
     if (rating === 5) return "Excellent!";
@@ -19,6 +19,7 @@ export default function DriverRatingScreen() {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState("");
     const [tracking, setTracking] = useState<OrderTrackingResponse | null>(null);
+    const [order, setOrder] = useState<OrderResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const params = useLocalSearchParams<{ orderId?: string; mood?: string }>();
 
@@ -28,7 +29,12 @@ export default function DriverRatingScreen() {
             return;
         }
         try {
-            setTracking(await getOrderTracking(params.orderId));
+            const [orderData, trackingData] = await Promise.all([
+                getOrderById(params.orderId),
+                getOrderTracking(params.orderId),
+            ]);
+            setOrder(orderData);
+            setTracking(trackingData);
         } finally {
             setIsLoading(false);
         }
@@ -38,7 +44,28 @@ export default function DriverRatingScreen() {
         void loadTracking();
     }, [loadTracking]);
 
+    useEffect(() => {
+        if (isLoading || !params.orderId || !order?.has_driver_review) {
+            return;
+        }
+
+        if (order.has_merchant_review) {
+            router.replace("/(tabs)/orders");
+            return;
+        }
+
+        router.replace({
+            pathname: "/order/food-rating",
+            params: { orderId: params.orderId, mood: params.mood },
+        });
+    }, [isLoading, order?.has_driver_review, order?.has_merchant_review, params.mood, params.orderId]);
+
     const handleSubmit = () => {
+        if (order?.has_driver_review) {
+            handleSkip();
+            return;
+        }
+
         router.push({
             pathname: "/order/food-rating",
             params: {
