@@ -71,6 +71,7 @@ export default function ChatScreen() {
     useEffect(() => {
         if (!orderId) return;
         let isMounted = true;
+        const room = `chat:${orderId}`;
 
         const handleMessage = (message: ChatMessage) => {
             if (message.order_id !== orderId || message.conversation_type !== "USER_DRIVER") return;
@@ -80,6 +81,7 @@ export default function ChatScreen() {
         const subscribe = async () => {
             await socketClient.connect();
             if (!isMounted) return;
+            socketClient.joinRoom(room);
             socketClient.on("chat.message", handleMessage);
         };
 
@@ -88,6 +90,7 @@ export default function ChatScreen() {
         return () => {
             isMounted = false;
             socketClient.off("chat.message", handleMessage);
+            socketClient.leaveRoom(room);
         };
     }, [appendMessage, orderId]);
 

@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { tokenService } from './tokenService';
+import { getFreshAccessToken } from './authTokens';
 
 const SOCKET_URL =
     process.env.EXPO_PUBLIC_SOCKET_URL ?? process.env.EXPO_PUBLIC_WEBSOCKET_URL;
@@ -101,8 +101,10 @@ export interface NotificationData {
 
 class SocketClient {
   private socket: Socket | null = null;
+  private connectPromise: Promise<void> | null = null;
   private reconnectAttempts = 0;
-  private readonly maxReconnectAttempts = 5;
+  private didRetryWithFreshToken = false;
+  private readonly maxReconnectAttempts = 8;
 
   async connect(): Promise<void> {
     if (this.socket?.connected) {
@@ -110,12 +112,16 @@ class SocketClient {
       return;
     }
 
+    if (this.socket && this.connectPromise) {
+      return this.connectPromise;
+    }
+
     if (!SOCKET_URL) {
       console.warn('[Socket] WebSocket URL not configured, skipping connection');
       return;
     }
 
-    const token = await tokenService.getToken();
+    const token = await getFreshAccessToken();
     
     if (!token) {
       console.warn('[Socket] No token available, skipping connection');
@@ -126,17 +132,52 @@ class SocketClient {
       this.socket = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
-        autoConnect: true,
-        reconnection: false,
-        reconnectionAttempts: 0,
+        autoConnect: false,
+        reconnection: true,
+        reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
-        timeout: 5000,
+        timeout: 10000,
       });
 
       this.setupDefaultListeners();
+
+      this.connectPromise = new Promise((resolve, reject) => {
+        const socket = this.socket;
+        if (!socket) {
+          resolve();
+          return;
+        }
+
+        const cleanup = () => {
+          socket.off('connect', handleConnect);
+          socket.off('connect_error', handleConnectError);
+        };
+
+        const handleConnect = () => {
+          cleanup();
+          this.connectPromise = null;
+          resolve();
+        };
+
+        const handleConnectError = (error: Error) => {
+          cleanup();
+          this.connectPromise = null;
+          reject(error);
+        };
+
+        socket.once('connect', handleConnect);
+        socket.once('connect_error', handleConnectError);
+        socket.connect();
+      });
+
+      await this.connectPromise;
     } catch (error) {
-      console.error('[Socket] Failed to initialize connection:', error);
+      this.connectPromise = null;
+      console.warn(
+        '[Socket] Failed to initialize connection:',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -146,6 +187,7 @@ class SocketClient {
     this.socket.on('connect', () => {
       console.log('[Socket] Connected:', this.socket?.id);
       this.reconnectAttempts = 0;
+      this.didRetryWithFreshToken = false;
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -157,18 +199,32 @@ class SocketClient {
         console.warn('[Socket] Connection error (server may not support Socket.IO):', error.message);
       }
       this.reconnectAttempts++;
-      
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.warn('[Socket] Max reconnection attempts reached, giving up');
-        this.disconnect();
+      if (!this.didRetryWithFreshToken) {
+        this.didRetryWithFreshToken = true;
+        void this.reconnectWithFreshToken();
       }
     });
+
+    this.socket.on('chat.message', (data) => {
+      console.log('[Socket] chat.message received:', data);
+    });
+  }
+
+  private async reconnectWithFreshToken(): Promise<void> {
+    const freshToken = await getFreshAccessToken();
+    if (!freshToken || !this.socket) return;
+
+    this.socket.auth = { token: freshToken };
+    if (!this.socket.connected) {
+      this.socket.connect();
+    }
   }
 
   disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
+      this.connectPromise = null;
       console.log('[Socket] Manually disconnected');
     }
   }
