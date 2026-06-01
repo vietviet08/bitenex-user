@@ -32,7 +32,11 @@ export default {
             predictiveBackGestureEnabled: false,
             package: "com.anonymous.bitenexuser",
             googleServicesFile: googleServicesJson,
-            permissions: ["POST_NOTIFICATIONS"],
+            permissions: [
+                "POST_NOTIFICATIONS",
+                "android.permission.RECORD_AUDIO",
+                "android.permission.MODIFY_AUDIO_SETTINGS",
+            ],
         },
         web: {
             output: "static",

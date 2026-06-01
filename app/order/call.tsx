@@ -43,6 +43,7 @@ export default function CallScreen() {
     const [error, setError] = useState<string | null>(null);
     const [isMuted, setIsMuted] = useState(false);
     const [isSpeakerEnabled, setIsSpeakerEnabled] = useState(true);
+    const [isAccepting, setIsAccepting] = useState(false);
 
     const activeCallId = call?.id ?? callId;
     const title = useMemo(() => {
@@ -159,15 +160,31 @@ export default function CallScreen() {
     }, [activeCallId]);
 
     const handleAccept = useCallback(async () => {
-        if (!activeCallId) return;
+        if (!activeCallId || isAccepting) return;
+        let didAccept = false;
+        setIsAccepting(true);
+        stopIncomingCallRingtone();
         try {
             const payload = await acceptCall(activeCallId);
+            didAccept = true;
             await joinCall(payload);
-        } catch {
-            Alert.alert("Call unavailable", "This call can no longer be accepted.");
-            setUiState("ended");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Unknown call error.";
+            console.warn("[Call] Accept failed:", message);
+            if (didAccept) {
+                await endCall(activeCallId).catch(() => undefined);
+                leaveAgoraVoiceChannel();
+                setError(message);
+                setUiState("error");
+                Alert.alert("Call audio failed", message || "Could not connect audio. Please try calling again.");
+            } else {
+                setUiState("ended");
+                Alert.alert("Call unavailable", message || "This call can no longer be accepted.");
+            }
+        } finally {
+            setIsAccepting(false);
         }
-    }, [activeCallId, joinCall]);
+    }, [activeCallId, isAccepting, joinCall]);
 
     const handleReject = useCallback(async () => {
         if (activeCallId) {
@@ -231,9 +248,16 @@ export default function CallScreen() {
                         </Pressable>
                         <Pressable
                             onPress={handleAccept}
-                            className="w-16 h-16 rounded-full bg-green-500 items-center justify-center active:bg-green-600"
+                            disabled={isAccepting}
+                            className={`w-16 h-16 rounded-full items-center justify-center ${
+                                isAccepting ? "bg-green-500/50" : "bg-green-500 active:bg-green-600"
+                            }`}
                         >
-                            <IconSymbol name="phone" size={28} color="#ffffff" />
+                            {isAccepting ? (
+                                <ActivityIndicator color="#ffffff" />
+                            ) : (
+                                <IconSymbol name="phone" size={28} color="#ffffff" />
+                            )}
                         </Pressable>
                     </View>
                 )}
