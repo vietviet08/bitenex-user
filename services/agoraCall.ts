@@ -60,6 +60,7 @@ export async function joinAgoraVoiceChannel({
     const agora = getAgoraModule();
     const nextEngine = agora.createAgoraRtcEngine();
     nextEngine.initialize({ appId });
+    nextEngine.setChannelProfile(agora.ChannelProfileType.ChannelProfileCommunication);
     nextEngine.enableAudio();
     nextEngine.setEnableSpeakerphone(true);
     nextEngine.addListener("onUserJoined", onRemoteJoined ?? (() => undefined));
