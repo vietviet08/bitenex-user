@@ -13,6 +13,8 @@ const selectLogin = (state: AuthState) => state.login;
 const selectRegister = (state: AuthState) => state.register;
 const selectLogout = (state: AuthState) => state.logout;
 
+const selectUpdateUser = (state: AuthState) => state.updateUser;
+
 export function useAuth() {
     const user = useUser();
     const isAuthenticated = useIsAuthenticated();
@@ -23,6 +25,7 @@ export function useAuth() {
     const login = useAuthStore(selectLogin);
     const register = useAuthStore(selectRegister);
     const logout = useAuthStore(selectLogout);
+    const updateUser = useAuthStore(selectUpdateUser);
 
     return useMemo(
         () => ({
@@ -35,6 +38,7 @@ export function useAuth() {
             login,
             register,
             logout,
+            updateUser,
         }),
         [
             user,
@@ -45,6 +49,7 @@ export function useAuth() {
             login,
             register,
             logout,
+            updateUser,
         ]
     );
 }
