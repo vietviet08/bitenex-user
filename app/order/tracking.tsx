@@ -161,14 +161,40 @@ function buildMapHtml({
     addMarker(data.driver, 'Driver', 'driver');
     addMarker(data.pickup, 'Restaurant', 'pickup');
     addMarker(data.delivery, 'Delivery', 'delivery');
+    
     if (data.driver && data.destination) {
-      L.polyline([[data.driver.latitude, data.driver.longitude], [data.destination.latitude, data.destination.longitude]], {
+      // Draw straight fallback dashed line
+      const backupLine = L.polyline([[data.driver.latitude, data.driver.longitude], [data.destination.latitude, data.destination.longitude]], {
         color: '#2563eb',
         weight: 5,
-        opacity: 0.8,
+        opacity: 0.5,
         dashArray: '8, 8'
       }).addTo(map);
+
+      // Fetch shortest road path via OSRM API (lon,lat;lon,lat)
+      const url = 'https://router.project-osrm.org/route/v1/driving/' + 
+        data.driver.longitude + ',' + data.driver.latitude + ';' + 
+        data.destination.longitude + ',' + data.destination.latitude + 
+        '?overview=full&geometries=geojson';
+
+      fetch(url)
+        .then(res => res.json())
+        .then(resData => {
+          if (resData.code === 'Ok' && resData.routes && resData.routes.length > 0) {
+            map.removeLayer(backupLine);
+            const route = resData.routes[0];
+            const coordinates = route.geometry.coordinates;
+            const latLngs = coordinates.map(coord => [coord[1], coord[0]]);
+            L.polyline(latLngs, {
+              color: '#2563eb',
+              weight: 6,
+              opacity: 0.8
+            }).addTo(map);
+          }
+        })
+        .catch(err => console.log('OSRM routing error:', err));
     }
+
     if (points.length > 1) {
       map.fitBounds(points, { padding: [36, 36], maxZoom: 16 });
     }
