@@ -45,6 +45,17 @@ export {
   type ChatMessage,
   type ChatMessageListResponse,
 } from './chat';
+export {
+  acceptCall,
+  endCall,
+  getCall,
+  rejectCall,
+  startOrderCall,
+  type CallActionResponse,
+  type CallStatus,
+  type CallTokenResponse,
+  type OrderCall,
+} from './call';
 export { locationService, type Coordinates, type LocationWithDetails, type AddressDetails } from './location';
 export {
   syncMyCartActivity,

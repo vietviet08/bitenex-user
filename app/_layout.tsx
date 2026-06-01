@@ -1,6 +1,6 @@
 import "../global.css";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { Redirect, Stack, useSegments } from "expo-router";
+import { Redirect, router, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
@@ -72,8 +72,25 @@ function RootLayoutNav() {
     }, [isInitialized]);
 
     useEffect(() => {
+        let removeCallInviteListener: (() => void) | null = null;
+
         if (isAuthenticated) {
-            socketClient.connect();
+            void (async () => {
+                await socketClient.connect();
+                const handleCallInvite = (data: unknown) => {
+                    const call = data as { id?: string };
+                    if (call.id) {
+                        router.push({
+                            pathname: "/order/call",
+                            params: { callId: call.id },
+                        });
+                    }
+                };
+                socketClient.on("call.invited", handleCallInvite);
+                removeCallInviteListener = () => {
+                    socketClient.off("call.invited", handleCallInvite);
+                };
+            })();
             pushNotificationService.start();
             startCartActivitySync();
         } else {
@@ -82,6 +99,7 @@ function RootLayoutNav() {
             stopCartActivitySync();
         }
         return () => {
+            removeCallInviteListener?.();
             pushNotificationService.stop();
             stopCartActivitySync();
         };
@@ -183,6 +201,14 @@ function RootLayoutNav() {
                     options={{
                         headerShown: false,
                         animation: "slide_from_right",
+                    }}
+                />
+
+                <Stack.Screen
+                    name="order/call"
+                    options={{
+                        headerShown: false,
+                        animation: "fade",
                     }}
                 />
 

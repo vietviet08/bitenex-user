@@ -100,7 +100,6 @@ export default function InviteFriendsScreen() {
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id}
                 showsVerticalScrollIndicator={false}
-                estimatedItemSize={72}
             />
         </SafeAreaView>
     );

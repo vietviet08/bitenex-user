@@ -89,7 +89,6 @@ export default function NotificationsScreen() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
                 showsVerticalScrollIndicator={false}
-                estimatedItemSize={140}
             />
         </SafeAreaView>
     );

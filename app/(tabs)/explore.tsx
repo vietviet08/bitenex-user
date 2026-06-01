@@ -556,8 +556,8 @@ export default function ExploreScreen() {
                                         Không tìm thấy kết quả
                                     </Text>
                                     <Text className="text-sm text-text-tertiary text-center">
-                                        Hãy thử mô tả khác, ví dụ:{"\n"}"Món có
-                                        vị ngọt, ít cay"
+                                        Hãy thử mô tả khác, ví dụ:{"\n"}&quot;Món có
+                                        vị ngọt, ít cay&quot;
                                     </Text>
                                 </View>
                             )}

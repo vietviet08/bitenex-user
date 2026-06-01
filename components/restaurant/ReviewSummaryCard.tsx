@@ -7,8 +7,8 @@
 
 import { useEffect, useRef } from "react";
 import {
-    ActivityIndicator,
     Animated,
+    type DimensionValue,
     Pressable,
     StyleSheet,
     Text,
@@ -47,7 +47,7 @@ const SENTIMENT_CONFIG: Record<
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function SkeletonLine({ width, height = 14 }: { width: string | number; height?: number }) {
+function SkeletonLine({ width, height = 14 }: { width: DimensionValue; height?: number }) {
     const opacity = useRef(new Animated.Value(0.3)).current;
 
     useEffect(() => {
@@ -232,7 +232,7 @@ export function ReviewSummaryCard({
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                    <MaterialIcons name="rate-review" size={16} color={colors.textSecondary} />
+                    <MaterialIcons name="rate-review" size={16} color={colors.text.secondary} />
                     <Text style={styles.statValue}>{summary.total_reviews_analyzed}</Text>
                     <Text style={styles.statLabel}>đánh giá</Text>
                 </View>
@@ -283,7 +283,7 @@ export function ReviewSummaryCard({
             {/* Refresh button */}
             {onRefresh && (
                 <Pressable onPress={onRefresh} style={styles.refreshRow}>
-                    <MaterialIcons name="refresh" size={14} color={colors.textSecondary} />
+                    <MaterialIcons name="refresh" size={14} color={colors.text.secondary} />
                     <Text style={styles.refreshText}>Cập nhật phân tích</Text>
                 </Pressable>
             )}
