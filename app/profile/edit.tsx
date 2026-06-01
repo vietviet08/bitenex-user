@@ -1,21 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
+import { ActivityIndicator, Alert, View, Text, TextInput, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { ScreenHeader } from "@/components/profile";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-
-// Mock user data
-const MOCK_USER = {
-    fullName: "Andrew Ainsley",
-    nickname: "Andrew",
-    email: "andrew_ainsley@yourdomain.com",
-    phone: "+1 111 467 378 399",
-    gender: "Male",
-    dateOfBirth: "12/27/1995",
-    avatarUrl:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
-};
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/services";
 
 interface FormFieldProps {
     readonly label: string;
@@ -23,6 +13,7 @@ interface FormFieldProps {
     readonly onChangeText: (text: string) => void;
     readonly placeholder?: string;
     readonly keyboardType?: "default" | "email-address" | "phone-pad";
+    readonly editable?: boolean;
 }
 
 function FormField({
@@ -31,6 +22,7 @@ function FormField({
     onChangeText,
     placeholder,
     keyboardType = "default",
+    editable = true,
 }: FormFieldProps) {
     return (
         <View className="mb-4">
@@ -42,7 +34,10 @@ function FormField({
                 onChangeText={onChangeText}
                 placeholder={placeholder}
                 keyboardType={keyboardType}
-                className="bg-gray-50 rounded-xl px-4 py-3.5 text-base text-text-primary"
+                editable={editable}
+                className={`rounded-xl px-4 py-3.5 text-base text-text-primary ${
+                    editable ? "bg-gray-50" : "bg-gray-100 text-gray-400"
+                }`}
                 placeholderTextColor="#9e9e9e"
             />
         </View>
@@ -50,18 +45,45 @@ function FormField({
 }
 
 export default function EditProfileScreen() {
+    const { user, updateUser } = useAuth();
+    const [isUpdating, setIsUpdating] = useState(false);
+
     const [formData, setFormData] = useState({
-        fullName: MOCK_USER.fullName,
-        nickname: MOCK_USER.nickname,
-        email: MOCK_USER.email,
-        phone: MOCK_USER.phone,
-        gender: MOCK_USER.gender,
-        dateOfBirth: MOCK_USER.dateOfBirth,
+        fullName: user?.full_name ?? "",
+        nickname: user?.full_name?.split(" ")[0] ?? "User",
+        email: user?.email ?? "",
+        phone: user?.phone ?? "",
+        gender: "Male",
+        dateOfBirth: "12/27/1995",
     });
 
-    const handleUpdate = () => {
-        // Future: API call to update profile
-        console.log("Update profile:", formData);
+    const handleUpdate = async () => {
+        if (!formData.fullName.trim()) {
+            Alert.alert("Lỗi", "Vui lòng nhập họ và tên.");
+            return;
+        }
+
+        setIsUpdating(true);
+        try {
+            const response = await api.patch("/users/profile", {
+                full_name: formData.fullName.trim(),
+                phone: formData.phone.trim() || null,
+            });
+
+            // Sync Zustand Store
+            updateUser({
+                full_name: response.data.full_name,
+                phone: response.data.phone,
+                avatar_url: response.data.avatar_url,
+            });
+
+            Alert.alert("Thành công", "Thông tin hồ sơ đã được cập nhật.");
+        } catch (error) {
+            console.error("Profile update error:", error);
+            Alert.alert("Thất bại", "Không thể cập nhật hồ sơ. Vui lòng thử lại.");
+        } finally {
+            setIsUpdating(false);
+        }
     };
 
     return (
@@ -76,7 +98,7 @@ export default function EditProfileScreen() {
                 <View className="items-center py-6">
                     <View className="relative">
                         <Image
-                            source={{ uri: MOCK_USER.avatarUrl }}
+                            source={{ uri: user?.avatar_url ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200" }}
                             style={{ width: 120, height: 120, borderRadius: 60 }}
                             contentFit="cover"
                         />
@@ -93,6 +115,7 @@ export default function EditProfileScreen() {
                     onChangeText={(text) =>
                         setFormData({ ...formData, fullName: text })
                     }
+                    editable={!isUpdating}
                 />
                 <FormField
                     label="Nickname"
@@ -100,6 +123,7 @@ export default function EditProfileScreen() {
                     onChangeText={(text) =>
                         setFormData({ ...formData, nickname: text })
                     }
+                    editable={!isUpdating}
                 />
                 <FormField
                     label="Email"
@@ -108,6 +132,7 @@ export default function EditProfileScreen() {
                         setFormData({ ...formData, email: text })
                     }
                     keyboardType="email-address"
+                    editable={false}
                 />
                 <FormField
                     label="Phone Number"
@@ -116,6 +141,7 @@ export default function EditProfileScreen() {
                         setFormData({ ...formData, phone: text })
                     }
                     keyboardType="phone-pad"
+                    editable={!isUpdating}
                 />
                 <FormField
                     label="Gender"
@@ -123,6 +149,7 @@ export default function EditProfileScreen() {
                     onChangeText={(text) =>
                         setFormData({ ...formData, gender: text })
                     }
+                    editable={!isUpdating}
                 />
                 <FormField
                     label="Date of Birth"
@@ -130,6 +157,7 @@ export default function EditProfileScreen() {
                     onChangeText={(text) =>
                         setFormData({ ...formData, dateOfBirth: text })
                     }
+                    editable={!isUpdating}
                 />
 
                 <View className="h-6" />
@@ -139,11 +167,18 @@ export default function EditProfileScreen() {
             <View className="px-6 pb-6">
                 <Pressable
                     onPress={handleUpdate}
-                    className="bg-primary-500 py-4 rounded-full items-center active:bg-primary-600"
+                    disabled={isUpdating}
+                    className={`bg-primary-500 py-4 rounded-full items-center active:bg-primary-600 ${
+                        isUpdating ? "opacity-60" : ""
+                    }`}
                 >
-                    <Text className="text-white font-bold text-base">
-                        Update
-                    </Text>
+                    {isUpdating ? (
+                        <ActivityIndicator color="#ffffff" size="small" />
+                    ) : (
+                        <Text className="text-white font-bold text-base">
+                            Update
+                        </Text>
+                    )}
                 </Pressable>
             </View>
         </SafeAreaView>

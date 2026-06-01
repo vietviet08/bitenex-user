@@ -1,4 +1,4 @@
-import { PermissionsAndroid, Platform } from "react-native";
+import { Linking, PermissionsAndroid, Platform } from "react-native";
 
 let engine: any | null = null;
 
@@ -7,9 +7,25 @@ async function requestMicrophonePermission(): Promise<boolean> {
         return true;
     }
 
-    const result = await PermissionsAndroid.request(
+    const existing = await PermissionsAndroid.check(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
     );
+    if (existing) {
+        return true;
+    }
+
+    const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+            title: "Microphone permission",
+            message: "Bitenex needs microphone access so you can talk with your driver.",
+            buttonPositive: "Allow",
+            buttonNegative: "Deny",
+        },
+    );
+    if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+        await Linking.openSettings().catch(() => undefined);
+    }
     return result === PermissionsAndroid.RESULTS.GRANTED;
 }
 
@@ -39,17 +55,25 @@ export async function joinAgoraVoiceChannel({
         throw new Error("Microphone permission is required for calls.");
     }
 
+    leaveAgoraVoiceChannel();
+
     const agora = getAgoraModule();
     const nextEngine = agora.createAgoraRtcEngine();
     nextEngine.initialize({ appId });
+    nextEngine.setChannelProfile(agora.ChannelProfileType.ChannelProfileCommunication);
     nextEngine.enableAudio();
     nextEngine.setEnableSpeakerphone(true);
     nextEngine.addListener("onUserJoined", onRemoteJoined ?? (() => undefined));
     nextEngine.addListener("onUserOffline", onRemoteOffline ?? (() => undefined));
-    nextEngine.joinChannel(token, channelName, uid, {
+    const joinResult = nextEngine.joinChannel(token, channelName, uid, {
         publishMicrophoneTrack: true,
         autoSubscribeAudio: true,
     });
+    if (joinResult !== 0) {
+        nextEngine.removeAllListeners();
+        nextEngine.release();
+        throw new Error(`Agora join failed with code ${joinResult}.`);
+    }
     engine = nextEngine;
 }
 

@@ -8,16 +8,9 @@ import {
     SettingsMenuItem,
 } from "@/components/profile";
 
-// Mock user data
-const MOCK_USER = {
-    name: "Andrew Ainsley",
-    phone: "+1 111 467 378 399",
-    avatarUrl:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
-};
 
 export default function ProfileScreen() {
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
 
     const handleLogout = () => {
         Alert.alert("Logout", "Are you sure you want to log out?", [
@@ -56,9 +49,9 @@ export default function ProfileScreen() {
 
                 {/* Profile Header */}
                 <ProfileHeader
-                    avatarUrl={MOCK_USER.avatarUrl}
-                    name={MOCK_USER.name}
-                    phone={MOCK_USER.phone}
+                    avatarUrl={user?.avatar_url ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200"}
+                    name={user?.full_name ?? "Guest"}
+                    phone={user?.phone ?? "No phone number"}
                 />
 
                 {/* Divider */}

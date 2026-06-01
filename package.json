@@ -5,7 +5,8 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo run:android",
+    "android": "powershell -ExecutionPolicy Bypass -File ./scripts/run-android-short-path.ps1",
+    "android:direct": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint"
@@ -23,6 +24,7 @@
     "@shopify/flash-list": "2.0.2",
     "axios": "^1.13.2",
     "expo": "~54.0.30",
+    "expo-audio": "~1.1.1",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.12",
     "expo-dev-client": "^6.0.20",

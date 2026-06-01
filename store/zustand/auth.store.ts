@@ -13,6 +13,8 @@ export interface User {
     role: string;
     is_verified: boolean;
     created_at: string;
+    phone?: string | null;
+    avatar_url?: string | null;
 }
 
 interface TokenResponse {
@@ -49,6 +51,7 @@ interface AuthState {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string, fullName: string, phone?: string | null) => Promise<void>;
     logout: () => Promise<void>;
+    updateUser: (user: Partial<User>) => void;
     setLoading: (loading: boolean) => void;
 }
 
@@ -179,6 +182,12 @@ export const useAuthStore = create<AuthState>()(
                     user: null,
                     isAuthenticated: false,
                 });
+            },
+
+            updateUser: (updatedFields) => {
+                set((state) => ({
+                    user: state.user ? { ...state.user, ...updatedFields } : null,
+                }));
             },
 
             setLoading: (isLoading) => set({ isLoading }),
