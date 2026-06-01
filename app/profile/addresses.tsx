@@ -81,7 +81,6 @@ export default function AddressesScreen() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
                 showsVerticalScrollIndicator={false}
-                estimatedItemSize={140}
                 ListFooterComponent={
                     <Pressable
                         onPress={handleAddAddress}

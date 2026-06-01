@@ -75,7 +75,6 @@ export default function FavoritesScreen() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
                 showsVerticalScrollIndicator={false}
-                estimatedItemSize={120}
             />
         </SafeAreaView>
     );

@@ -82,7 +82,6 @@ export default function PromosScreen() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
                 showsVerticalScrollIndicator={false}
-                estimatedItemSize={240}
             />
         </SafeAreaView>
     );

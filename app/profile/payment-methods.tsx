@@ -73,7 +73,6 @@ export default function PaymentMethodsScreen() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
                 showsVerticalScrollIndicator={false}
-                estimatedItemSize={100}
                 ListFooterComponent={
                     <Pressable
                         onPress={handleAddCard}

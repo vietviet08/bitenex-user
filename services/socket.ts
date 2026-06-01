@@ -17,6 +17,11 @@ export interface SocketEvents {
   'driver.assigned': (data: DriverAssignedData) => void;
 
   'chat.message': (data: ChatMessageData) => void;
+  'call.invited': (data: CallEventData) => void;
+  'call.accepted': (data: CallEventData) => void;
+  'call.rejected': (data: CallEventData) => void;
+  'call.ended': (data: CallEventData) => void;
+  'call.missed': (data: CallEventData) => void;
 
   'notification.new': (data: NotificationData) => void;
 }
@@ -67,6 +72,23 @@ export interface ChatMessageData {
   content: string;
   message_type: 'text';
   created_at: string;
+}
+
+export interface CallEventData {
+  id: string;
+  order_id: string;
+  caller_user_id: string;
+  callee_user_id: string;
+  caller_role: 'USER' | 'DRIVER';
+  callee_role: 'USER' | 'DRIVER';
+  channel_name: string;
+  status: 'RINGING' | 'ACCEPTED' | 'REJECTED' | 'ENDED' | 'MISSED';
+  started_at: string;
+  accepted_at: string | null;
+  ended_at: string | null;
+  expires_at: string;
+  ended_by: string | null;
+  end_reason: string | null;
 }
 
 export interface NotificationData {
