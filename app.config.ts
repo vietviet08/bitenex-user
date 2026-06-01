@@ -17,6 +17,8 @@ export default {
             googleServicesFile: googleServiceInfoPlist,
             infoPlist: {
                 UIBackgroundModes: ["remote-notification"],
+                NSMicrophoneUsageDescription:
+                    "Allow Bitenex to use your microphone for driver voice calls.",
             },
         },
         android: {
@@ -46,6 +48,7 @@ export default {
                     defaultChannel: "default",
                 },
             ],
+            "expo-audio",
             "@react-native-firebase/app",
             "@react-native-firebase/messaging",
             [

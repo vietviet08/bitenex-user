@@ -19,6 +19,10 @@ import {
     setAgoraMuted,
     setAgoraSpeakerEnabled,
 } from "@/services/agoraCall";
+import {
+    startIncomingCallRingtone,
+    stopIncomingCallRingtone,
+} from "@/services/callRingtone";
 
 type UiState =
     | "loading"
@@ -49,6 +53,7 @@ export default function CallScreen() {
     }, [uiState]);
 
     const joinCall = useCallback(async (payload: Awaited<ReturnType<typeof startOrderCall>>) => {
+        stopIncomingCallRingtone();
         setCall(payload.call);
         setUiState("connecting");
         await joinAgoraVoiceChannel({
@@ -102,20 +107,41 @@ export default function CallScreen() {
         void bootstrap();
         return () => {
             cancelled = true;
+            stopIncomingCallRingtone();
             leaveAgoraVoiceChannel();
         };
     }, [callId, joinCall, orderId]);
+
+    useEffect(() => {
+        if (uiState !== "incoming") {
+            stopIncomingCallRingtone();
+            return;
+        }
+
+        void startIncomingCallRingtone().catch((err) => {
+            console.warn(
+                "[Call] Could not start incoming ringtone:",
+                err instanceof Error ? err.message : String(err),
+            );
+        });
+
+        return () => {
+            stopIncomingCallRingtone();
+        };
+    }, [uiState]);
 
     useEffect(() => {
         const handleTerminal = (data: OrderCall) => {
             if (data.id !== activeCallId) return;
             setCall(data);
             setUiState("ended");
+            stopIncomingCallRingtone();
             leaveAgoraVoiceChannel();
         };
         const handleAccepted = (data: OrderCall) => {
             if (data.id !== activeCallId) return;
             setCall(data);
+            stopIncomingCallRingtone();
             setUiState("active");
         };
 
@@ -147,6 +173,7 @@ export default function CallScreen() {
         if (activeCallId) {
             await rejectCall(activeCallId).catch(() => undefined);
         }
+        stopIncomingCallRingtone();
         leaveAgoraVoiceChannel();
         router.back();
     }, [activeCallId]);
@@ -155,6 +182,7 @@ export default function CallScreen() {
         if (activeCallId) {
             await endCall(activeCallId).catch(() => undefined);
         }
+        stopIncomingCallRingtone();
         leaveAgoraVoiceChannel();
         setUiState("ended");
         router.back();
