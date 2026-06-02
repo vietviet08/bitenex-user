@@ -136,3 +136,32 @@ export function isEmpty(obj: Record<string, unknown>): boolean {
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
+
+/**
+ * Resolve relative or localhost image URLs to correct local IP URLs for physical React Native devices
+ */
+export function resolveImageUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  
+  const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || "";
+  const backendHost = apiBaseUrl.split("/api/v1")[0] || "http://localhost:8000";
+
+  // 1. If relative URL, prepend host
+  if (url.startsWith("/")) {
+    return `${backendHost}${url}`;
+  }
+  if (url.startsWith("uploads/") || url.startsWith("media/")) {
+    return `${backendHost}/${url}`;
+  }
+
+  // 2. If it contains localhost/127.0.0.1, replace with current env host IP
+  if (url.includes("localhost:") || url.includes("127.0.0.1:")) {
+    const envHost = backendHost.replace("http://", "").replace("https://", "");
+    return url
+      .replaceAll("localhost:8000", envHost)
+      .replaceAll("127.0.0.1:8000", envHost);
+  }
+
+  return url;
+}
+

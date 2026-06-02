@@ -71,3 +71,4 @@ export {
   type MenuItemDto,
   type RestaurantCardDto,
 } from './merchant';
+export { uploadFile } from './upload';

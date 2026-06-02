@@ -5,7 +5,9 @@ import { Image } from "expo-image";
 import { ScreenHeader } from "@/components/profile";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAuth } from "@/hooks/useAuth";
-import { api } from "@/services";
+import { api, uploadFile } from "@/services";
+import * as ImagePicker from "expo-image-picker";
+import { resolveImageUrl } from "@/utils/helpers";
 
 interface FormFieldProps {
     readonly label: string;
@@ -47,6 +49,7 @@ function FormField({
 export default function EditProfileScreen() {
     const { user, updateUser } = useAuth();
     const [isUpdating, setIsUpdating] = useState(false);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
     const [formData, setFormData] = useState({
         fullName: user?.full_name ?? "",
@@ -55,7 +58,44 @@ export default function EditProfileScreen() {
         phone: user?.phone ?? "",
         gender: "Male",
         dateOfBirth: "12/27/1995",
+        avatarUrl: user?.avatar_url ?? "",
     });
+
+    const pickAvatar = async () => {
+        try {
+            const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!permission.granted) {
+                Alert.alert("Quyền truy cập", "Bạn cần cấp quyền truy cập thư viện ảnh để tải ảnh đại diện.");
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ["images"],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets[0].uri) {
+                const selectedUri = result.assets[0].uri;
+                setIsUploadingAvatar(true);
+
+                try {
+                    const uploadedUrl = await uploadFile(selectedUri, "avatars");
+                    setFormData((prev) => ({ ...prev, avatarUrl: uploadedUrl }));
+                } catch (error) {
+                    Alert.alert(
+                        "Lỗi tải lên",
+                        error instanceof Error ? error.message : "Tải ảnh lên thất bại."
+                    );
+                } finally {
+                    setIsUploadingAvatar(false);
+                }
+            }
+        } catch {
+            Alert.alert("Lỗi", "Không thể chọn ảnh.");
+        }
+    };
 
     const handleUpdate = async () => {
         if (!formData.fullName.trim()) {
@@ -68,6 +108,7 @@ export default function EditProfileScreen() {
             const response = await api.patch("/users/profile", {
                 full_name: formData.fullName.trim(),
                 phone: formData.phone.trim() || null,
+                avatar_url: formData.avatarUrl || null,
             });
 
             // Sync Zustand Store
@@ -97,12 +138,28 @@ export default function EditProfileScreen() {
                 {/* Avatar */}
                 <View className="items-center py-6">
                     <View className="relative">
-                        <Image
-                            source={{ uri: user?.avatar_url ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200" }}
+                        <Pressable
+                            onPress={pickAvatar}
+                            disabled={isUploadingAvatar || isUpdating}
+                            className="overflow-hidden bg-gray-100"
                             style={{ width: 120, height: 120, borderRadius: 60 }}
-                            contentFit="cover"
-                        />
-                        <Pressable className="absolute bottom-0 right-0 w-8 h-8 bg-primary-500 rounded-full items-center justify-center">
+                        >
+                            <Image
+                                source={{ uri: resolveImageUrl(formData.avatarUrl) ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200" }}
+                                style={{ width: 120, height: 120 }}
+                                contentFit="cover"
+                            />
+                            {isUploadingAvatar && (
+                                <View className="absolute inset-0 items-center justify-center" style={{ backgroundColor: "rgba(0, 0, 0, 0.4)" }}>
+                                    <ActivityIndicator size="small" color="#ffffff" />
+                                </View>
+                            )}
+                        </Pressable>
+                        <Pressable
+                            onPress={pickAvatar}
+                            disabled={isUploadingAvatar || isUpdating}
+                            className="absolute bottom-0 right-0 w-8 h-8 bg-primary-500 rounded-full items-center justify-center border-2 border-white"
+                        >
                             <IconSymbol name="edit" size={16} color="#ffffff" />
                         </Pressable>
                     </View>
