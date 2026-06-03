@@ -104,11 +104,17 @@ class SocketClient {
   private connectPromise: Promise<void> | null = null;
   private reconnectAttempts = 0;
   private didRetryWithFreshToken = false;
+  private activeRooms = new Set<string>();
   private readonly maxReconnectAttempts = 8;
 
   async connect(): Promise<void> {
     if (this.socket?.connected) {
       console.log('[Socket] Already connected');
+      return;
+    }
+
+    if (this.socket && !this.socket.connected && !this.connectPromise) {
+      this.socket.connect();
       return;
     }
 
@@ -188,6 +194,7 @@ class SocketClient {
       console.log('[Socket] Connected:', this.socket?.id);
       this.reconnectAttempts = 0;
       this.didRetryWithFreshToken = false;
+      this.rejoinActiveRooms();
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -225,6 +232,7 @@ class SocketClient {
       this.socket.disconnect();
       this.socket = null;
       this.connectPromise = null;
+      this.activeRooms.clear();
       console.log('[Socket] Manually disconnected');
     }
   }
@@ -246,11 +254,24 @@ class SocketClient {
   }
 
   joinRoom(room: string): void {
-    this.socket?.emit('join', { room });
+    this.activeRooms.add(room);
+    if (this.socket?.connected) {
+      this.socket.emit('join', { room });
+    }
   }
 
   leaveRoom(room: string): void {
-    this.socket?.emit('leave', { room });
+    this.activeRooms.delete(room);
+    if (this.socket?.connected) {
+      this.socket.emit('leave', { room });
+    }
+  }
+
+  private rejoinActiveRooms(): void {
+    if (!this.socket?.connected) return;
+    for (const room of this.activeRooms) {
+      this.socket.emit('join', { room });
+    }
   }
 
   get isConnected(): boolean {

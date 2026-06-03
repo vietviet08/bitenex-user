@@ -78,10 +78,16 @@ export default function ChatScreen() {
             appendMessage(message);
         };
 
+        const handleConnect = () => {
+            socketClient.joinRoom(room);
+            void loadChat();
+        };
+
         const subscribe = async () => {
             await socketClient.connect();
             if (!isMounted) return;
             socketClient.joinRoom(room);
+            socketClient.on("connect", handleConnect);
             socketClient.on("chat.message", handleMessage);
         };
 
@@ -89,10 +95,11 @@ export default function ChatScreen() {
 
         return () => {
             isMounted = false;
+            socketClient.off("connect", handleConnect);
             socketClient.off("chat.message", handleMessage);
             socketClient.leaveRoom(room);
         };
-    }, [appendMessage, orderId]);
+    }, [appendMessage, loadChat, orderId]);
 
     const bubbleData = useMemo(() => messages.map(toBubble), [messages]);
 
