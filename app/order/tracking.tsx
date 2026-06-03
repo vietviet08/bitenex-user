@@ -135,10 +135,20 @@ function buildMapHtml({
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     html, body, #map { height: 100%; margin: 0; padding: 0; background: #f3f4f6; }
-    .marker { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.25); }
+    .marker { 
+      width: 32px; 
+      height: 32px; 
+      border-radius: 50%; 
+      border: 3px solid #fff; 
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.25); 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .driver { background: #2563eb; }
     .pickup { background: #f97316; }
     .delivery { background: #16a34a; }
@@ -151,16 +161,21 @@ function buildMapHtml({
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([data.center.latitude, data.center.longitude], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
     const points = [];
-    const icon = (className) => L.divIcon({ className: '', html: '<div class="marker ' + className + '"></div>', iconSize: [30, 30], iconAnchor: [15, 15] });
-    const addMarker = (point, label, className) => {
+    const icon = (className, iconHtml) => L.divIcon({ 
+      className: '', 
+      html: '<div class="marker ' + className + '">' + iconHtml + '</div>', 
+      iconSize: [32, 32], 
+      iconAnchor: [16, 16] 
+    });
+    const addMarker = (point, label, className, iconHtml) => {
       if (!point) return;
       const latLng = [point.latitude, point.longitude];
-      L.marker(latLng, { icon: icon(className) }).addTo(map).bindPopup(label);
+      L.marker(latLng, { icon: icon(className, iconHtml) }).addTo(map).bindPopup(label);
       points.push(latLng);
     };
-    addMarker(data.driver, 'Driver', 'driver');
-    addMarker(data.pickup, 'Restaurant', 'pickup');
-    addMarker(data.delivery, 'Delivery', 'delivery');
+    addMarker(data.driver, 'Driver', 'driver', '<i class="fa-solid fa-motorcycle" style="color: white; font-size: 14px;"></i>');
+    addMarker(data.pickup, 'Restaurant', 'pickup', '<i class="fa-solid fa-store" style="color: white; font-size: 13px;"></i>');
+    addMarker(data.delivery, 'Delivery', 'delivery', '<i class="fa-solid fa-house" style="color: white; font-size: 13px;"></i>');
     
     if (data.driver && data.destination) {
       // Draw straight fallback dashed line

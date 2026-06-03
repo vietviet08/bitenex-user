@@ -16,6 +16,7 @@ import {
     startCartActivitySync,
     stopCartActivitySync,
 } from "@/store/zustand/cartActivitySync";
+import { useFavoritesStore } from "@/store/zustand/favorites.store";
 import {
     useHasCompletedWalkthrough,
     useOnboardingChecked,
@@ -93,10 +94,13 @@ function RootLayoutNav() {
             })();
             pushNotificationService.start();
             startCartActivitySync();
+            // Seed favorite IDs so home screen cards show correct heart state
+            useFavoritesStore.getState().fetchFavoriteIds();
         } else {
             socketClient.disconnect();
             pushNotificationService.stop();
             stopCartActivitySync();
+            useFavoritesStore.getState().reset();
         }
         return () => {
             removeCallInviteListener?.();

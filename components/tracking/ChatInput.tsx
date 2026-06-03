@@ -1,18 +1,23 @@
 import React, { memo, useState, useCallback } from "react";
 import { View, TextInput, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 interface ChatInputProps {
     readonly onSend: (message: string) => void;
+    readonly onPickImage?: () => void;
     readonly placeholder?: string;
     readonly disabled?: boolean;
+    readonly isUploading?: boolean;
 }
 
 function ChatInputComponent({
     onSend,
+    onPickImage,
     placeholder = "Type a message...",
     disabled = false,
+    isUploading = false,
 }: ChatInputProps) {
     const [message, setMessage] = useState("");
     const insets = useSafeAreaInsets();
@@ -29,6 +34,21 @@ function ChatInputComponent({
             className="flex-row items-center gap-2 px-4 pt-3 bg-white border-t border-gray-100"
             style={{ paddingBottom: Math.max(insets.bottom, 10) }}
         >
+            {onPickImage && (
+                <Pressable
+                    onPress={onPickImage}
+                    disabled={disabled || isUploading}
+                    className={`w-11 h-11 rounded-full items-center justify-center ${
+                        !disabled && !isUploading ? "bg-gray-100 active:bg-gray-200" : "bg-gray-200"
+                    }`}
+                >
+                    <MaterialIcons
+                        name="image"
+                        size={21}
+                        color={!disabled && !isUploading ? "#374151" : "#9ca3af"}
+                    />
+                </Pressable>
+            )}
             <View className="flex-1 flex-row items-center bg-gray-100 rounded-2xl px-4 py-2 min-h-11">
                 <TextInput
                     value={message}

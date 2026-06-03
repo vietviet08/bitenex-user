@@ -1,10 +1,11 @@
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { colors } from "@/theme";
+import { useFavoritesStore } from "@/store/zustand/favorites.store";
 
 export type Restaurant = {
     id: string;
@@ -25,6 +26,16 @@ export const RestaurantCard = memo(function RestaurantCard({
 }) {
     const router = useRouter();
     const isHighRated = restaurant.rating >= 4.7;
+    const isFav = useFavoritesStore((s) => s.favoriteIds.has(restaurant.id));
+    const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+
+    const handleFavoritePress = useCallback(
+        (e: { stopPropagation: () => void }) => {
+            e.stopPropagation?.();
+            toggleFavorite(restaurant.id);
+        },
+        [restaurant.id, toggleFavorite],
+    );
 
     return (
         <Pressable
@@ -52,11 +63,15 @@ export const RestaurantCard = memo(function RestaurantCard({
                     </Text>
                 </View>
 
-                <Pressable className="absolute right-2 top-2 h-8 w-8 items-center justify-center rounded-full bg-white/90">
+                <Pressable
+                    className="absolute right-2 top-2 h-8 w-8 items-center justify-center rounded-full bg-white/90"
+                    onPress={handleFavoritePress}
+                    hitSlop={8}
+                >
                     <IconSymbol
-                        name={restaurant.isFavorite ? "favorite" : "favorite-border"}
+                        name={isFav ? "favorite" : "favorite-border"}
                         size={18}
-                        color={restaurant.isFavorite ? colors.error : colors.neutral[500]}
+                        color={isFav ? colors.error : colors.neutral[500]}
                     />
                 </Pressable>
             </View>

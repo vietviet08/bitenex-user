@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { resolveImageUrl } from "@/utils/helpers";
 
 interface ProfileHeaderProps {
     readonly avatarUrl: string;
@@ -29,7 +30,7 @@ function ProfileHeaderComponent({
         <View className="flex-row items-center gap-4 px-6 py-4">
             <View className="relative">
                 <Image
-                    source={{ uri: avatarUrl }}
+                    source={{ uri: resolveImageUrl(avatarUrl) ?? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name || "Guest")}` }}
                     style={{ width: 80, height: 80, borderRadius: 40 }}
                     contentFit="cover"
                 />
