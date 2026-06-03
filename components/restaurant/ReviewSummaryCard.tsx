@@ -297,18 +297,18 @@ export function ReviewSummaryCard({
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: "#1a1a2e",
+        backgroundColor: colors.background.primary,
         borderRadius: 16,
         padding: 16,
         marginHorizontal: 16,
         marginVertical: 8,
         borderWidth: 1,
-        borderColor: "rgba(245, 158, 11, 0.2)",
-        shadowColor: "#f59e0b",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        borderColor: "rgba(245, 158, 11, 0.18)",
+        shadowColor: colors.text.primary,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 4,
+        elevation: 3,
     },
     errorCard: {
         alignItems: "center",
@@ -328,19 +328,19 @@ const styles = StyleSheet.create({
     },
     aiLabel: {
         fontSize: 13,
-        fontWeight: "600",
-        color: "#f59e0b",
+        fontWeight: "700",
+        color: "#d97706", // Darker amber for readability on white bg
         letterSpacing: 0.3,
     },
     cachedBadge: {
-        backgroundColor: "rgba(255,255,255,0.08)",
+        backgroundColor: colors.background.secondary,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,
     },
     cachedText: {
         fontSize: 10,
-        color: "rgba(255,255,255,0.4)",
+        color: colors.text.tertiary,
     },
     sentimentBadge: {
         flexDirection: "row",
@@ -369,20 +369,20 @@ const styles = StyleSheet.create({
     statValue: {
         fontSize: 16,
         fontWeight: "700",
-        color: "#fff",
+        color: colors.text.primary,
     },
     statLabel: {
         fontSize: 12,
-        color: "rgba(255,255,255,0.5)",
+        color: colors.text.secondary,
     },
     statDivider: {
         width: 1,
         height: 16,
-        backgroundColor: "rgba(255,255,255,0.15)",
+        backgroundColor: colors.border.light,
         marginHorizontal: 4,
     },
     summaryBox: {
-        backgroundColor: "rgba(245, 158, 11, 0.08)",
+        backgroundColor: "rgba(245, 158, 11, 0.06)",
         borderRadius: 10,
         padding: 12,
         marginBottom: 12,
@@ -391,12 +391,12 @@ const styles = StyleSheet.create({
     },
     summaryText: {
         fontSize: 13,
-        color: "rgba(255,255,255,0.85)",
+        color: colors.text.primary,
         lineHeight: 20,
     },
     divider: {
         height: 1,
-        backgroundColor: "rgba(255,255,255,0.08)",
+        backgroundColor: colors.border.light,
         marginBottom: 12,
     },
     prosConsRow: {
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 13,
         fontWeight: "700",
-        color: "#fff",
+        color: colors.text.primary,
         marginBottom: 4,
     },
     proConItem: {
@@ -428,12 +428,12 @@ const styles = StyleSheet.create({
     },
     proConText: {
         fontSize: 13,
-        color: "rgba(255,255,255,0.75)",
+        color: colors.text.secondary,
         lineHeight: 20,
         flex: 1,
     },
     skeletonLine: {
-        backgroundColor: "rgba(255,255,255,0.12)",
+        backgroundColor: colors.background.secondary,
         borderRadius: 6,
         marginVertical: 3,
     },
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     },
     refreshText: {
         fontSize: 12,
-        color: "rgba(255,255,255,0.35)",
+        color: colors.text.tertiary,
     },
     errorText: {
         fontSize: 14,
