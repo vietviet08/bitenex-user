@@ -30,7 +30,7 @@ function ProfileHeaderComponent({
         <View className="flex-row items-center gap-4 px-6 py-4">
             <View className="relative">
                 <Image
-                    source={{ uri: resolveImageUrl(avatarUrl) ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200" }}
+                    source={{ uri: resolveImageUrl(avatarUrl) ?? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name || "Guest")}` }}
                     style={{ width: 80, height: 80, borderRadius: 40 }}
                     contentFit="cover"
                 />

@@ -1,81 +1,78 @@
-import React, { useState, useCallback } from "react";
-import { View } from "react-native";
+import React, { useCallback, useEffect } from "react";
+import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
 import { ScreenHeader, FavoriteCard } from "@/components/profile";
-
-interface Favorite {
-    id: string;
-    name: string;
-    imageUrl: string;
-    rating: number;
-    category: string;
-}
-
-const MOCK_FAVORITES: Favorite[] = [
-    {
-        id: "1",
-        name: "Pizza Palace",
-        imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200",
-        rating: 4.8,
-        category: "Italian • Pizza",
-    },
-    {
-        id: "2",
-        name: "Burger King",
-        imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200",
-        rating: 4.5,
-        category: "American • Burgers",
-    },
-    {
-        id: "3",
-        name: "Sushi Master",
-        imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=200",
-        rating: 4.9,
-        category: "Japanese • Sushi",
-    },
-    {
-        id: "4",
-        name: "Taco Bell",
-        imageUrl: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=200",
-        rating: 4.3,
-        category: "Mexican • Tacos",
-    },
-];
+import { useFavoritesStore, useFavoritesLoading } from "@/store/zustand/favorites.store";
+import type { FavoriteMerchantDto } from "@/services/favorite";
+import { colors } from "@/theme";
 
 export default function FavoritesScreen() {
-    const [favorites, setFavorites] = useState(MOCK_FAVORITES);
+    const { favorites, fetchFavorites } = useFavoritesStore();
+    const loading = useFavoritesLoading();
 
-    const handleRemove = useCallback((id: string) => {
-        setFavorites((prev) => prev.filter((f) => f.id !== id));
-    }, []);
+    // Refresh favorites data every time this screen is focused
+    useEffect(() => {
+        fetchFavorites();
+    }, [fetchFavorites]);
 
     const renderItem = useCallback(
-        ({ item }: { item: Favorite }) => (
-            <View className="mb-3">
-                <FavoriteCard
-                    id={item.id}
-                    name={item.name}
-                    imageUrl={item.imageUrl}
-                    rating={item.rating}
-                    category={item.category}
-                    onRemove={handleRemove}
-                />
-            </View>
-        ),
-        [handleRemove]
+        ({ item }: { item: FavoriteMerchantDto }) => {
+            // Build a display category from city + delivery info
+            const category = item.city || "Restaurant";
+
+            return (
+                <View className="mb-3">
+                    <FavoriteCard
+                        merchantId={item.merchant_id}
+                        name={item.name}
+                        imageUrl={item.cover_image_url ?? item.logo_url}
+                        rating={item.average_rating}
+                        category={category}
+                    />
+                </View>
+            );
+        },
+        [],
+    );
+
+    const EmptyState = () => (
+        <View className="flex-1 items-center justify-center py-24">
+            <Text style={{ fontSize: 64, marginBottom: 16 }}>🤍</Text>
+            <Text
+                className="text-lg font-semibold text-neutral-800 mb-2"
+                style={{ textAlign: "center" }}
+            >
+                No favorites yet
+            </Text>
+            <Text
+                className="text-sm text-neutral-500"
+                style={{ textAlign: "center", paddingHorizontal: 32 }}
+            >
+                Tap the heart icon on any restaurant to save it here
+            </Text>
+        </View>
     );
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
             <ScreenHeader title="My Favorites" />
-            <FlashList
-                data={favorites}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
-                showsVerticalScrollIndicator={false}
-            />
+            {loading && favorites.length === 0 ? (
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator size="large" color={colors.primary[500]} />
+                </View>
+            ) : (
+                <FlashList
+                    data={favorites}
+                    renderItem={renderItem}
+                    keyExtractor={(item) => item.merchant_id}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={<EmptyState />}
+                    onRefresh={fetchFavorites}
+                    refreshing={loading}
+                />
+            )}
         </SafeAreaView>
     );
 }

@@ -56,8 +56,6 @@ export default function EditProfileScreen() {
         nickname: user?.full_name?.split(" ")[0] ?? "User",
         email: user?.email ?? "",
         phone: user?.phone ?? "",
-        gender: "Male",
-        dateOfBirth: "12/27/1995",
         avatarUrl: user?.avatar_url ?? "",
     });
 
@@ -145,7 +143,7 @@ export default function EditProfileScreen() {
                             style={{ width: 120, height: 120, borderRadius: 60 }}
                         >
                             <Image
-                                source={{ uri: resolveImageUrl(formData.avatarUrl) ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200" }}
+                                source={{ uri: resolveImageUrl(formData.avatarUrl) ?? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(formData.fullName || "Guest")}` }}
                                 style={{ width: 120, height: 120 }}
                                 contentFit="cover"
                             />
@@ -198,22 +196,6 @@ export default function EditProfileScreen() {
                         setFormData({ ...formData, phone: text })
                     }
                     keyboardType="phone-pad"
-                    editable={!isUpdating}
-                />
-                <FormField
-                    label="Gender"
-                    value={formData.gender}
-                    onChangeText={(text) =>
-                        setFormData({ ...formData, gender: text })
-                    }
-                    editable={!isUpdating}
-                />
-                <FormField
-                    label="Date of Birth"
-                    value={formData.dateOfBirth}
-                    onChangeText={(text) =>
-                        setFormData({ ...formData, dateOfBirth: text })
-                    }
                     editable={!isUpdating}
                 />
 

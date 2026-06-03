@@ -38,3 +38,12 @@ export {
   type DriverLocation,
   type DeliveryAddress,
 } from './order.store';
+
+export {
+  useFavoritesStore,
+  useFavorites,
+  useFavoriteIds,
+  useIsFavorite,
+  useFavoritesLoading,
+} from './favorites.store';
+
