@@ -70,7 +70,8 @@ export interface ChatMessageData {
   sender_name: string | null;
   sender_avatar_url: string | null;
   content: string;
-  message_type: 'text';
+  message_type: 'text' | 'image';
+  media_url: string | null;
   created_at: string;
 }
 

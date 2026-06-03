@@ -1,6 +1,7 @@
 import { api } from "./api";
 
 export type ChatConversationType = "USER_DRIVER" | "MERCHANT_DRIVER";
+export type ChatMessageType = "text" | "image";
 
 export interface ChatMessage {
     id: string;
@@ -11,7 +12,8 @@ export interface ChatMessage {
     sender_name: string | null;
     sender_avatar_url: string | null;
     content: string;
-    message_type: "text";
+    message_type: ChatMessageType;
+    media_url: string | null;
     created_at: string;
 }
 
@@ -35,10 +37,16 @@ export async function sendOrderChatMessage(
     orderId: string,
     conversationType: ChatConversationType,
     content: string,
+    options?: { messageType?: ChatMessageType; mediaUrl?: string | null },
 ): Promise<ChatMessage> {
     const response = await api.post<ChatMessage>(
         `/chats/orders/${orderId}/messages`,
-        { conversation_type: conversationType, content },
+        {
+            conversation_type: conversationType,
+            content,
+            message_type: options?.messageType ?? "text",
+            media_url: options?.mediaUrl ?? null,
+        },
     );
     return response.data;
 }

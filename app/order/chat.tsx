@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FlashList, FlashListRef } from "@shopify/flash-list";
@@ -15,18 +16,25 @@ import {
     socketClient,
     type ChatMessage,
     type OrderTrackingResponse,
+    uploadFile,
 } from "@/services";
+
+const QUICK_REPLIES = [
+    "Tôi đang ra nhận",
+    "Gọi tôi khi tới",
+    "Bạn tới đâu rồi?",
+];
 
 function toBubble(message: ChatMessage): Message {
     return {
         id: message.id,
         senderId: message.sender_user_id,
-        content: message.content,
+        content: message.message_type === "image" ? message.media_url ?? message.content : message.content,
         timestamp: new Date(message.created_at).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
         }),
-        type: "text",
+        type: message.message_type,
         isMe: message.sender_role === "USER",
     };
 }
@@ -37,6 +45,7 @@ export default function ChatScreen() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
     const listRef = useRef<FlashListRef<Message>>(null);
 
     const appendMessage = useCallback((message: ChatMessage) => {
@@ -113,6 +122,35 @@ export default function ChatScreen() {
         }
     }, [appendMessage, isSending, orderId]);
 
+    const handlePickImage = useCallback(async () => {
+        if (!orderId || isSending || isUploadingImage || !tracking?.driver_id) return;
+
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) return;
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: true,
+            aspect: [4, 3],
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.85,
+        });
+
+        if (result.canceled || !result.assets[0]?.uri) return;
+
+        setIsUploadingImage(true);
+        try {
+            const imageUrl = await uploadFile(result.assets[0].uri, "chat");
+            appendMessage(
+                await sendOrderChatMessage(orderId, "USER_DRIVER", "", {
+                    messageType: "image",
+                    mediaUrl: imageUrl,
+                }),
+            );
+        } finally {
+            setIsUploadingImage(false);
+        }
+    }, [appendMessage, isSending, isUploadingImage, orderId, tracking?.driver_id]);
+
     const renderItem = useCallback(
         ({ item }: { item: Message }) => <ChatBubble message={item} />,
         [],
@@ -164,10 +202,26 @@ export default function ChatScreen() {
                             />
                         )}
                     </View>
+                    <View className="px-4 pb-2">
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                            {QUICK_REPLIES.map((reply) => (
+                                <Pressable
+                                    key={reply}
+                                    onPress={() => handleSend(reply)}
+                                    disabled={isSending || isUploadingImage || !tracking?.driver_id}
+                                    className="px-3 py-2 rounded-full bg-orange-50 border border-orange-100 active:bg-orange-100"
+                                >
+                                    <Text className="text-primary-600 text-sm font-medium">{reply}</Text>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+                    </View>
                     <ChatInput
                         onSend={handleSend}
-                        placeholder={isSending ? "Đang gửi..." : "Nhập tin nhắn..."}
-                        disabled={isSending || !tracking?.driver_id}
+                        onPickImage={handlePickImage}
+                        placeholder={isSending || isUploadingImage ? "Đang gửi..." : "Nhập tin nhắn..."}
+                        disabled={isSending || isUploadingImage || !tracking?.driver_id}
+                        isUploading={isUploadingImage}
                     />
                 </KeyboardAvoidingView>
             )}
