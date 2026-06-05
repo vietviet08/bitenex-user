@@ -1,5 +1,33 @@
+import type { ConfigPlugin } from "@expo/config-plugins";
+import { AndroidConfig, withAndroidManifest } from "@expo/config-plugins";
+
 const googleServicesJson = process.env.GOOGLE_SERVICES_JSON;
 const googleServiceInfoPlist = process.env.GOOGLE_SERVICE_INFO_PLIST;
+
+const FIREBASE_DEFAULT_CHANNEL_METADATA =
+    "com.google.firebase.messaging.default_notification_channel_id";
+
+const withFirebaseNotificationChannelIdReplace: ConfigPlugin = (config) =>
+    withAndroidManifest(config, (config) => {
+        const application = AndroidConfig.Manifest.getMainApplicationOrThrow(config.modResults);
+        const metadata = application["meta-data"]?.find(
+            (item) => item.$?.["android:name"] === FIREBASE_DEFAULT_CHANNEL_METADATA
+        );
+
+        if (metadata?.$) {
+            const replaceValues = new Set(
+                (metadata.$["tools:replace"] ?? "")
+                    .split(",")
+                    .map((value) => value.trim())
+                    .filter(Boolean)
+            );
+
+            replaceValues.add("android:value");
+            metadata.$["tools:replace"] = Array.from(replaceValues).join(",");
+        }
+
+        return config;
+    });
 
 export default {
     expo: {
@@ -55,6 +83,7 @@ export default {
             "expo-audio",
             "@react-native-firebase/app",
             "@react-native-firebase/messaging",
+            withFirebaseNotificationChannelIdReplace,
             [
                 "expo-splash-screen",
                 {
